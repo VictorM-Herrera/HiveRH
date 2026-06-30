@@ -31,6 +31,8 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `DB_URL` | URL JDBC de la base MySQL | `jdbc:mysql://localhost:3306/hiverh` |
 | `DB_USER` | Usuario de MySQL | `root` |
 | `DB_PASSWORD` | Password de MySQL | `admin` |
+| `EMAIL_ADDRESS` | Email usado como remitente SMTP | `hiverh.notificaciones@gmail.com` |
+| `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
 | `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
 
@@ -40,9 +42,13 @@ Ejemplo:
 DB_URL=jdbc:mysql://localhost:3306/hiverh
 DB_USER=root
 DB_PASSWORD=admin
+EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
+EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
 EXPIRATION=86400000
 ```
+
+Para Gmail se recomienda usar una password de aplicacion, no la password personal de la cuenta.
 
 No es obligatorio usar un archivo `.env`. Cada integrante puede configurar estas variables como prefiera: desde IntelliJ IDEA, desde la terminal, desde variables del sistema operativo o desde el entorno que use para ejecutar la aplicacion.
 
@@ -106,25 +112,55 @@ El detalle completo de endpoints esta en `docs/Informe_Entidades_Endpoints.md`. 
 | Auth | `/api/auth` |
 | Accounts | `/api/accounts` |
 | Employees | `/api/employees` |
-| Branches | `/api/branch` |
-| Departments | `/api/department` |
-| Positions | `/api/position` |
+| Branches | `/api/branches` |
+| Departments | `/api/departments` |
+| Positions | `/api/positions` |
 | Variations | `/api/variations` |
 | Payrolls | `/api/payrolls` |
-| Licenses | `/api/license` |
-| Certificates | `/api/certificate` |
-| Vacations | `/api/vacation` |
-| Complaints | `/api/complaint` |
-| Suspensions | `/api/suspension` |
+| Licenses | `/api/licenses` |
+| Certificates | `/api/certificates` |
+| Vacations | `/api/vacations` |
+| Complaints | `/api/complaints` |
+| Suspensions | `/api/suspensions` |
 
 Los filtros en endpoints `GET` se envian por query params. No hace falta mandar todos los filtros: se puede enviar uno, varios o ninguno.
 
 Ejemplos:
 
 ```http
-GET /api/employees?dni=43917621
-GET /api/vacation?accepted=false&fullName=Juan Perez
-GET /api/payrolls/employee/3?startDate=2026-01-01&endDate=2026-06-30
+GET /api/employees?dni=43917621&page=0&size=10
+GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
+GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+```
+
+## Paginacion
+
+Los endpoints paginados usan los parametros estandar de Spring `Pageable`:
+
+```http
+page=0
+size=10
+sort=startDate,desc
+```
+
+`page` empieza en 0. `sort` es opcional y ordena los resultados sin cambiar los filtros aplicados.
+
+Endpoints con paginacion:
+
+| Modulo | Endpoint |
+|---|---|
+| Employees | `GET /api/employees` |
+| Licenses | `GET /api/licenses` |
+| Payrolls | `GET /api/payrolls` |
+| Vacations | `GET /api/vacations` |
+
+Ejemplos:
+
+```http
+GET /api/employees?page=0&size=10
+GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
+GET /api/payrolls?page=0&size=10
+GET /api/vacations?dniEmployee=43917621&page=0&size=10
 ```
 
 ## Reglas importantes

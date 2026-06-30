@@ -186,7 +186,7 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 ## Preparación inicial
 
-- Levantar la base de datos MySQL y configurar las variables DB_URL, DB_USER, DB_PASSWORD, SECRET y EXPIRATION.
+- Levantar la base de datos MySQL y configurar las variables DB_URL, DB_USER, DB_PASSWORD, EMAIL_ADDRESS, EMAIL_PASSWORD, SECRET y EXPIRATION.
 - Ejecutar la aplicación Spring Boot.
 - Tener al menos una cuenta ADMIN inicial. Como el endpoint /api/auth/register está protegido, el primer ADMIN debe existir previamente por seed, carga manual o base ya preparada.
 - En Postman, crear una variable token y enviar Authorization: Bearer {{token}} en todos los endpoints protegidos.
@@ -204,9 +204,9 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 ## 2. Configuración base de la empresa
 
-- Primero se cargan las sucursales con /api/branch.
-- Después se cargan los departamentos con /api/department.
-- Luego se cargan los puestos con /api/position.
+- Primero se cargan las sucursales con /api/branches.
+- Después se cargan los departamentos con /api/departments.
+- Luego se cargan los puestos con /api/positions.
 - Estos tres módulos son la base para crear empleados porque el alta de empleado exige id_branch, id_position e id_department.
 
 ---
@@ -240,7 +240,7 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 ## 6. Payroll / liquidación de sueldo
 
-- Para crear una liquidación se llama a POST /api/payrolls con payrollDate, idEmployee y una lista opcional de idVariations.
+- Para crear una liquidación se llama a POST /api/payrolls con payrollDate, dniEmployee y una lista opcional de idVariations.
 - El sistema busca el empleado, valida que esté ACTIVE, que tenga sueldo base válido y que la fecha de liquidación no sea anterior a su contratación.
 - También valida que ese empleado no tenga otra liquidación en el mismo mes.
 - El total final se calcula como sueldo base + suma de variaciones.
@@ -250,17 +250,18 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 ## 7. Vacaciones
 
-- Las vacaciones se registran con /api/vacation y se asocian a un empleado.
-- El sistema valida empleado activo, fechas obligatorias, fecha final posterior a inicio y que la solicitud no sea posterior al inicio.
+- Las vacaciones se registran con /api/vacations y se asocian a un empleado por DNI.
+- El sistema valida empleado activo, fechas obligatorias, fecha final posterior a inicio, que la solicitud no sea posterior al inicio y que exista una anticipación mínima de 5 días hábiles.
 - También evita vacaciones superpuestas para el mismo empleado.
-- Permite listar por estado de aceptación, rango de fechas y nombre completo.
+- Permite listar por estado de aceptación, rango de fechas, DNI del empleado y nombre completo.
 
 ---
 
 ## 8. Licencias y certificados
 
-- Las licencias se registran con /api/license y representan ausencias justificadas, por ejemplo licencia médica.
-- Se puede crear la licencia y luego adjuntar uno o más certificados PDF con /api/certificate usando multipart/form-data.
+- Las licencias se registran con /api/licenses y representan ausencias justificadas, por ejemplo licencia médica.
+- Las licencias nuevas se crean para el empleado autenticado, quedan inicialmente en estado PENDING y luego RRHH o ADMIN pueden revisarlas con estado ACCEPTED, DENIED o REJECTED.
+- Se puede crear la licencia y luego adjuntar uno o más certificados PDF con /api/certificates usando multipart/form-data.
 - Un ADMIN o RRHH puede listar todas las licencias; un empleado puede acceder a sus propias licencias/certificados según las reglas de autorización.
 - El certificado se guarda como bytes y puede consultarse como PDF o como información resumida.
 
@@ -268,19 +269,41 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 ## 9. Denuncias internas
 
-- Las denuncias se crean con /api/complaint y se asocian a un empleado activo.
+- Las denuncias se crean con /api/complaints y se asocian a un empleado activo.
 - Al crearse quedan en estado PENDING.
-- Luego se puede cambiar el estado a REVIEWED mediante PUT /api/complaint/{id_complaint}.
+- Luego se puede cambiar el estado a REVIEWED mediante PUT /api/complaints/{id_complaint}. Una denuncia revisada no puede volver a modificarse.
 - El listado permite filtrar por ID, título, estado y rango de fechas.
 
 ---
 
 ## 10. Suspensiones
 
-- Una suspensión se registra con /api/suspension indicando empleado, motivo y rango de fechas.
+- Una suspensión se registra con /api/suspensions indicando DNI del empleado, motivo y rango de fechas.
 - El sistema valida empleado, motivo obligatorio y fechas coherentes.
 - Al crear la suspensión cambia el estado del empleado a SUSPENDED.
+- Un proceso programado reactiva automáticamente al empleado cuando finaliza la suspensión, siempre que siga en estado SUSPENDED. Si fue dado de baja mientras estaba suspendido, permanece TERMINATED.
 - Luego las liquidaciones y vacaciones no deberían poder registrarse para ese empleado mientras no vuelva a estar ACTIVE, porque esos servicios validan el estado del empleado.
+
+---
+
+## Paginación
+
+Los endpoints paginados reciben los parámetros estándar de Spring Pageable:
+
+```http
+page=0
+size=10
+sort=requestDate,desc
+```
+
+La página inicial es 0. El parámetro sort es opcional y permite ordenar sin cambiar los filtros.
+
+Endpoints paginados actuales:
+
+- GET /api/employees
+- GET /api/licenses
+- GET /api/payrolls
+- GET /api/vacations
 
 ---
 
@@ -330,19 +353,19 @@ Se utiliza para modificar permisos de acceso dentro del sistema.
 
 ## Branch
 
-### GET /api/branch
+### GET /api/branches
 
 Lista las sucursales activas registradas en el sistema.
 
-### POST /api/branch
+### POST /api/branches
 
 Crea una nueva sucursal.
 
-### PUT /api/branch/{id_branch}
+### PUT /api/branches/{id_branch}
 
 Actualiza los datos de una sucursal existente.
 
-### DELETE /api/branch/{id_branch}
+### DELETE /api/branches/{id_branch}
 
 Realiza una baja lógica de la sucursal.
 
@@ -352,19 +375,23 @@ No elimina el registro de la base de datos, sino que la marca como inactiva.
 
 ## Department
 
-### GET /api/department
+### GET /api/departments
 
 Lista los departamentos registrados en el sistema.
 
 Permite aplicar filtros por ID, nombre y estado activo.
 
-### POST /api/department
+### POST /api/departments
 
 Crea un nuevo departamento.
 
-### DELETE /api/department/{id_department}
+### PUT /api/departments/{id_department}
 
-Realiza una baja lógica del departamento.
+Actualiza los datos principales de un departamento.
+
+### PATCH /api/departments/{id_department}/status
+
+Activa o desactiva el departamento mediante alta o baja lógica.
 
 El registro no se elimina físicamente, sino que queda marcado como inactivo.
 
@@ -372,19 +399,23 @@ El registro no se elimina físicamente, sino que queda marcado como inactivo.
 
 ## Position
 
-### GET /api/position
+### GET /api/positions
 
 Lista los puestos de trabajo registrados en el sistema.
 
 Permite filtrar por departamento, nombre y estado activo.
 
-### POST /api/position
+### POST /api/positions
 
 Crea un nuevo puesto de trabajo.
 
-### DELETE /api/position/{id}
+### PUT /api/positions/{id}
 
-Realiza una baja lógica del puesto.
+Actualiza los datos principales de un puesto de trabajo.
+
+### PATCH /api/positions/{id}/status
+
+Activa o desactiva el puesto mediante alta o baja lógica.
 
 El puesto no se borra definitivamente, sino que queda marcado como inactivo.
 
@@ -394,7 +425,7 @@ El puesto no se borra definitivamente, sino que queda marcado como inactivo.
 
 ### GET /api/employees
 
-Lista los empleados registrados en el sistema.
+Lista los empleados registrados en el sistema en formato paginado.
 
 Permite aplicar filtros según los parámetros disponibles.
 
@@ -404,9 +435,9 @@ Devuelve el empleado asociado a la cuenta autenticada.
 
 Sirve para que un usuario pueda consultar sus propios datos como empleado.
 
-### GET /api/employees/{id}
+### GET /api/employees/{dni}
 
-Consulta un empleado específico por su ID.
+Consulta un empleado específico por su DNI.
 
 ### POST /api/employees
 
@@ -414,13 +445,13 @@ Crea un nuevo empleado en estado ACTIVE.
 
 Al crear el empleado, también se genera automáticamente una cuenta con rol EMPLOYEE por defecto.
 
-### PATCH /api/employees/{id}
+### PATCH /api/employees/{dni}
 
 Actualiza parcialmente los datos de un empleado.
 
 Solo modifica los campos enviados en la solicitud.
 
-### PUT /api/employees/{id}
+### PUT /api/employees/{dni}
 
 Actualiza los datos del empleado.
 
@@ -470,11 +501,11 @@ Elimina una variación salarial.
 
 ### GET /api/payrolls
 
-Lista las liquidaciones de sueldo registradas en el sistema.
+Lista las liquidaciones de sueldo registradas en el sistema en formato paginado.
 
-### GET /api/payrolls/{id}
+### GET /api/payrolls/employee/{dni_employee}
 
-Consulta una liquidación de sueldo específica por su ID.
+Consulta liquidaciones de un empleado por DNI, con filtros opcionales de fecha.
 
 ### POST /api/payrolls
 
@@ -492,23 +523,23 @@ Luego de eliminarla, devuelve los datos de la liquidación eliminada.
 
 ## Vacation
 
-### GET /api/vacation
+### GET /api/vacations
 
-Lista las vacaciones registradas.
+Lista las vacaciones registradas en formato paginado.
 
-Permite aplicar filtros según los parámetros disponibles.
+Permite aplicar filtros por aceptación, rango de fechas, DNI del empleado y nombre completo.
 
-### POST /api/vacation
+### POST /api/vacations
 
 Registra vacaciones para un empleado activo.
 
 El sistema valida que las fechas sean correctas y que no haya superposición con otros períodos.
 
-### PUT /api/vacation/{id_vacation}
+### PUT /api/vacations/{id_vacation}
 
 Actualiza un registro de vacaciones existente.
 
-### DELETE /api/vacation/{id_vacation}
+### DELETE /api/vacations/{id_vacation}
 
 Elimina el registro de vacaciones indicado.
 
@@ -516,27 +547,27 @@ Elimina el registro de vacaciones indicado.
 
 ## License
 
-### GET /api/license
+### GET /api/licenses
 
-Lista las licencias registradas en el sistema.
+Lista las licencias registradas en el sistema en formato paginado.
 
-Permite aplicar filtros según los parámetros disponibles.
+Permite aplicar filtros por estado, DNI del empleado, rango de fechas y si es paga.
 
-### GET /api/license/{id_license}
+### GET /api/licenses/{id_license}
 
 Consulta una licencia específica por su ID.
 
-### POST /api/license
+### POST /api/licenses
 
-Crea una nueva licencia asociada a un empleado.
+Crea una nueva licencia asociada al empleado autenticado. El empleado no indica id ni DNI en el body.
 
-### PATCH /api/license
+### PATCH /api/licenses/{id_license}
 
-Actualiza parcialmente una licencia.
+Permite a RRHH o ADMIN revisar una licencia, actualizando su estado y si es paga.
 
-Solo modifica los campos enviados en la solicitud.
+Los estados posibles son PENDING, ACCEPTED, DENIED y REJECTED.
 
-### DELETE /api/license/{id_license}
+### DELETE /api/licenses/{id_license}
 
 Elimina una licencia.
 
@@ -544,7 +575,7 @@ Elimina una licencia.
 
 ## Certificate
 
-### POST /api/certificate
+### POST /api/certificates
 
 Carga un certificado PDF asociado a una licencia.
 
@@ -566,35 +597,35 @@ Elimina el certificado indicado.
 
 ## Complaint
 
-### GET /api/complaint
+### GET /api/complaints
 
 Lista las denuncias registradas en el sistema.
 
 Permite aplicar filtros según los parámetros disponibles.
 
-### POST /api/complaint
+### POST /api/complaints
 
 Crea una nueva denuncia en estado PENDING.
 
 Esto indica que la denuncia queda pendiente de revisión.
 
-### PUT /api/complaint/{id_complaint}
+### PUT /api/complaints/{id_complaint}
 
 Actualiza el estado de una denuncia.
 
-Permite cambiar el estado a PENDING o REVIEWED, según corresponda.
+Permite cambiar el estado a PENDING o REVIEWED, según corresponda. Una denuncia ya revisada no puede volver a modificarse.
 
 ---
 
 ## Suspension
 
-### GET /api/suspension
+### GET /api/suspensions
 
 Lista las suspensiones registradas en el sistema.
 
 Permite aplicar filtros según los parámetros disponibles.
 
-### POST /api/suspension
+### POST /api/suspensions
 
 Registra una nueva suspensión para un empleado.
 
@@ -704,7 +735,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/Branch
+Endpoint: /api/branches
 
 Permite crear una nueva sucursal.
 
@@ -724,7 +755,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/department
+Endpoint: /api/departments
 
 Permite crear un nuevo departamento dentro de la empresa.
 
@@ -742,7 +773,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/position
+Endpoint: /api/positions
 
 Permite crear un nuevo puesto de trabajo.
 
@@ -792,7 +823,7 @@ Body:
 
 Método: PATCH
 
-Endpoint: /api/employees/1
+Endpoint: /api/employees/40111222
 
 Permite actualizar parcialmente los datos de un empleado.
 
@@ -868,7 +899,7 @@ Body:
 ```json
 {
   "payrollDate": "2026-06-30",
-  "idEmployee": 1,
+  "dniEmployee": "40111222",
   "idVariations": [
     1,
     2
@@ -882,7 +913,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/vacation
+Endpoint: /api/vacations
 
 Permite registrar vacaciones para un empleado activo.
 
@@ -895,7 +926,7 @@ Body:
   "startDate": "2026-07-01",
   "endDate": "2026-07-10",
   "paid": true,
-  "idEmployee": 1
+  "dniEmployee": "40111222"
 }
 ```
 
@@ -905,7 +936,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/license
+Endpoint: /api/licenses
 
 Permite registrar una licencia asociada a un empleado.
 
@@ -913,15 +944,11 @@ Body:
 
 ```json
 {
-  "requestDate": "2026-06-11",
-  "isAccepted": false,
   "startDate": "2026-06-15",
   "endDate": "2026-06-17",
-  "isPaid": true,
   "motive": "Licencia médica",
   "description": "Reposo indicado por profesional",
-  "idCertificates": [],
-  "idEmployee": 1
+  "idCertificates": []
 }
 ```
 
@@ -931,19 +958,18 @@ Body:
 
 Método: PATCH
 
-Endpoint: /api/license
+Endpoint: /api/licenses/1
 
-Permite actualizar parcialmente una licencia.
+Permite revisar una licencia.
 
-Solo se modifican los campos enviados en el body.
+Solo RRHH o ADMIN pueden actualizar el estado y si es paga.
 
 Body:
 
 ```json
 {
-  "id": 1,
-  "isAccepted": true,
-  "description": "Licencia médica aprobada"
+  "status": "ACCEPTED",
+  "isPaid": true
 }
 ```
 
@@ -953,7 +979,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/certificate
+Endpoint: /api/certificates
 
 Permite cargar un certificado PDF asociado a una licencia.
 
@@ -979,7 +1005,7 @@ file = archivo.pdf
 
 Método: POST
 
-Endpoint: /api/complaint
+Endpoint: /api/complaints
 
 Permite crear una denuncia.
 
@@ -991,7 +1017,7 @@ Body:
 {
   "title": "Incidente interno",
   "description": "Se registra una situación para revisión de RRHH",
-  "idEmployee": 1
+  "dni": "40111222"
 }
 ```
 
@@ -1001,7 +1027,7 @@ Body:
 
 Método: PUT
 
-Endpoint: /api/complaint/1
+Endpoint: /api/complaints/1
 
 Permite actualizar el estado de una denuncia.
 
@@ -1019,7 +1045,7 @@ Body:
 
 Método: POST
 
-Endpoint: /api/suspensión
+Endpoint: /api/suspensions
 
 Permite registrar una suspensión para un empleado.
 
@@ -1029,7 +1055,7 @@ Body:
 
 ```json
 {
-  "id_employee": 1,
+  "dniEmployee": "40111222",
   "motive": "Incumplimiento de normas internas",
   "start_date": "2026-06-20",
   "end_date": "2026-06-22"
