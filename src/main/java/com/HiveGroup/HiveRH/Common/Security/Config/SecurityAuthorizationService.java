@@ -81,6 +81,14 @@ public class SecurityAuthorizationService {
         return canAccessEmployee(employeeId);
     }
 
+    public boolean canCreateVacationForEmployeeDni(String dni) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+            return true;
+        }
+
+        return canAccessEmployeeDni(dni);
+    }
+
     public boolean canCreateComplaintForEmployee(Long employeeId) {
         if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
             return true;

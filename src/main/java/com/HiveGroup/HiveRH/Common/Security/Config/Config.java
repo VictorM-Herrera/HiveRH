@@ -3,6 +3,7 @@ package com.HiveGroup.HiveRH.Common.Security.Config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,6 +19,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableScheduling
 @RequiredArgsConstructor
 public class Config {
 
@@ -48,18 +50,17 @@ public class Config {
                         .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/departments/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.POST, "/api/position").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/position/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/position/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/position/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/positions").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/positions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/positions/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/variations").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/variations/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/variations/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/variations/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/suspension/**").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.POST, "/api/suspension").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.GET, "/api/suspensions/**").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.POST, "/api/suspensions").hasAnyRole("ADMIN", "RRHH")
 
                         .requestMatchers(HttpMethod.GET, "/api/licenses").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.GET, "/api/licenses/*").authenticated()
@@ -69,10 +70,10 @@ public class Config {
 
                         .requestMatchers(HttpMethod.POST, "/api/certificates").authenticated()
 
-                        .requestMatchers(HttpMethod.GET, "/api/vacation").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.POST, "/api/vacation").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/vacation/**").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.DELETE, "/api/vacation/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/vacations").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.POST, "/api/vacations").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/vacations/**").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vacations/**").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/complaints").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/complaints").hasAnyRole("ADMIN", "RRHH")

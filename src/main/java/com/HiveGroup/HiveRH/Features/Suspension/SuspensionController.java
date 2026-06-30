@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/suspension")
+@RequestMapping("/api/suspensions")
 @AllArgsConstructor
 @Tag(name = "Suspensions", description = "Suspensiones de empleados y cambio de estado asociado.")
 public class SuspensionController {

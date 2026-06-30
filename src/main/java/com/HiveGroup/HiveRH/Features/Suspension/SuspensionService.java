@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -19,6 +20,7 @@ import java.util.List;
 public class SuspensionService {
     private final SuspensionRepository suspensionRepository;
     private final EmployeeRepository employeeRepository;
+    private final SuspensionMapper suspensionMapper;
 
     public List<SuspensionResponseDTO> findAllByFilter(SuspensionFilterDTO filters) {
         SuspensionFilterDTO activeFilters = filters != null
@@ -26,21 +28,21 @@ public class SuspensionService {
                 : new SuspensionFilterDTO(null, null, null, null);
 
         return suspensionRepository.findAll().stream()
-                .filter(suspension -> activeFilters.id_employee() == null || suspension.getEmployee().getId_employee().equals(activeFilters.id_employee()))
+                .filter(suspension -> activeFilters.dniEmployee() == null || suspension.getEmployee().getDni().equals(activeFilters.dniEmployee()))
                 .filter(suspension -> matchesDateRange(suspension, activeFilters))
                 .filter(suspension -> TextSearchUtils.matchesFullName(
                         suspension.getEmployee().getName(),
                         suspension.getEmployee().getLastName(),
                         activeFilters.fullName()
                 ))
-                .map(this::toDTO)
+                .map(suspensionMapper::toResponse)
                 .toList();
     }
 
     @Transactional
     public SuspensionResponseDTO create(SuspensionRequestDTO request) {
-        if (request.id_employee() == null) {
-            throw new IllegalArgumentException("El empleado es obligatorio");
+        if (request.dniEmployee() == null || request.dniEmployee().isBlank()) {
+            throw new IllegalArgumentException("El DNI del empleado es obligatorio");
         }
         if (request.motive() == null || request.motive().isBlank()) {
             throw new IllegalArgumentException("El motivo es obligatorio");
@@ -52,20 +54,26 @@ public class SuspensionService {
             throw new IllegalArgumentException("La fecha de fin no puede ser anterior a la fecha de inicio");
         }
 
-        EmployeeEntity employee = employeeRepository.findById(request.id_employee())
-                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado", "Employee"));
+        EmployeeEntity employee = employeeRepository.findByDni(request.dniEmployee())
+                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado para el DNI indicado", "Employee"));
 
-        SuspensionEntity suspension = SuspensionEntity.builder()
-                .employee(employee)
-                .motive(request.motive())
-                .startDate(request.start_date())
-                .endDate(request.end_date())
-                .build();
+        validateEmployeeCanBeSuspended(employee);
+
+        SuspensionEntity suspension = suspensionMapper.toEntity(request, employee);
 
         employee.setStatus(StatusEnum.SUSPENDED);
         employeeRepository.save(employee);
 
-        return toDTO(suspensionRepository.save(suspension));
+        return suspensionMapper.toResponse(suspensionRepository.save(suspension));
+    }
+
+    @Transactional
+    public void reactivateEmployeesWithExpiredSuspensions() {
+        suspensionRepository.findByEndDateLessThanEqual(LocalDate.now())
+                .stream()
+                .map(SuspensionEntity::getEmployee)
+                .filter(employee -> employee.getStatus() == StatusEnum.SUSPENDED)
+                .forEach(employee -> employee.setStatus(StatusEnum.ACTIVE));
     }
 
     private boolean matchesDateRange(SuspensionEntity suspension, SuspensionFilterDTO filters) {
@@ -79,15 +87,9 @@ public class SuspensionService {
         return startsBeforeFilterEnd && endsAfterFilterStart;
     }
 
-    private SuspensionResponseDTO toDTO(SuspensionEntity suspension) {
-        return new SuspensionResponseDTO(
-                suspension.getId_suspension(),
-                suspension.getEmployee().getId_employee(),
-                suspension.getEmployee().getName(),
-                suspension.getEmployee().getLastName(),
-                suspension.getMotive(),
-                suspension.getStartDate(),
-                suspension.getEndDate()
-        );
+    private void validateEmployeeCanBeSuspended(EmployeeEntity employee) {
+        if (employee.getStatus() != StatusEnum.ACTIVE) {
+            throw new IllegalArgumentException("Solo se puede suspender a empleados activos");
+        }
     }
 }

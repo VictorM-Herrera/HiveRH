@@ -7,8 +7,7 @@ import java.time.LocalDate;
 public record SuspensionResponseDTO(
         @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
         Long id_suspension,
-        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-        Long id_employee,
+        String dniEmployee,
         String employeeName,
         String employeeLastName,
         String motive,
