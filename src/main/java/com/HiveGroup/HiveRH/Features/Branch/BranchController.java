@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/branch")
+@RequestMapping("/api/branches")
 @AllArgsConstructor
 @Tag(name = "Branches", description = "Administracion de sucursales de la empresa.")
 public class BranchController {

@@ -35,16 +35,15 @@ public class Config {
                         .requestMatchers(HttpMethod.PATCH, "/api/accounts/me/**").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/employees").hasAnyRole("ADMIN", "RRHH")
-                        //.requestMatchers(HttpMethod.GET, "/api/employees/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/employees").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.PATCH, "/api/employees/**").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.GET, "/api/employees/page").hasAnyRole("ADMIN", "RRHH")
 
-                        .requestMatchers(HttpMethod.POST, "/api/branch").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/branch/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/branch/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/branches").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/branches/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/branches/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/department").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/department/**").hasRole("ADMIN")
@@ -69,6 +68,8 @@ public class Config {
                         .requestMatchers(HttpMethod.POST, "/api/license").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/license").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.DELETE, "/api/license/*").authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/api/certificates").authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/api/vacation").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.POST, "/api/vacation").authenticated()

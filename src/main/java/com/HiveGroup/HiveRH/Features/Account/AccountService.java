@@ -32,12 +32,12 @@ public class AccountService {
         return accountMapper.toResponse(entity);
     }
 
-    public ResponseAccountDTO updateRole(Long id, RolEnum rol) {
+    public ResponseAccountDTO updateRole(String email, RolEnum rol) {
         if (rol == null) {
             throw new IllegalArgumentException("El rol es obligatorio");
         }
 
-        AccountEntity account = accountRepository.findById(id)
+        AccountEntity account = accountRepository.findByUserOrEmail(email,email)
                 .orElseThrow(() -> new EntityNotFoundException("Cuenta inexistente", "AccountEntity"));
         account.setRol(rol);
         accountRepository.save(account);

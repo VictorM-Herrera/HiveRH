@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
     private final AccountService accountService;
 
-    @PatchMapping("/{id}/role")
+    @PatchMapping("/{email}/role")
     @Operation(summary = "Cambiar rol de cuenta", description = "Permite modificar el rol de una cuenta existente. Se utiliza para administrar permisos de acceso dentro del sistema.")
     public ResponseEntity<ResponseAccountDTO> updateRole(
-            @PathVariable @Positive(message = "El ID de la cuenta debe ser mayor que cero") Long id,
+            @PathVariable String email,
             @Valid @RequestBody UpdateAccountRoleDTO request) {
-        return ResponseEntity.ok(accountService.updateRole(id, request.rol()));
+        return ResponseEntity.ok(accountService.updateRole(email, request.rol()));
     }
 
     @PatchMapping("/{dni}/rol")
