@@ -45,10 +45,9 @@ public class Config {
                         .requestMatchers(HttpMethod.PUT, "/api/branches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/branches/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.POST, "/api/department").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/department/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/department/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/department/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/departments").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/departments/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/position").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/position/**").hasRole("ADMIN")
@@ -63,11 +62,11 @@ public class Config {
                         .requestMatchers(HttpMethod.GET, "/api/suspension/**").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.POST, "/api/suspension").hasAnyRole("ADMIN", "RRHH")
 
-                        .requestMatchers(HttpMethod.GET, "/api/license").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.GET, "/api/license/*").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/license").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/license").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.DELETE, "/api/license/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/licenses").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.GET, "/api/licenses/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/licenses").hasRole("EMPLOYEE")
+                        .requestMatchers(HttpMethod.PATCH, "/api/licenses/*").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.DELETE, "/api/licenses/*").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/certificates").authenticated()
 
@@ -76,10 +75,9 @@ public class Config {
                         .requestMatchers(HttpMethod.PUT, "/api/vacation/**").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.DELETE, "/api/vacation/**").authenticated()
 
-                        .requestMatchers(HttpMethod.POST, "/api/complaint").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/complaint").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.PUT, "/api/complaint/**").hasAnyRole("ADMIN", "RRHH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/complaint/**").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.POST, "/api/complaints").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/complaints").hasAnyRole("ADMIN", "RRHH")
+                        .requestMatchers(HttpMethod.PUT, "/api/complaints/**").hasAnyRole("ADMIN", "RRHH")
 
                         .requestMatchers(HttpMethod.GET, "/api/payrolls").hasAnyRole("ADMIN", "RRHH")
                         .requestMatchers(HttpMethod.GET, "/api/payrolls/employee/*").authenticated()

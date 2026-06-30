@@ -17,14 +17,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/complaint")
+@RequestMapping("/api/complaints")
 @RequiredArgsConstructor
 @Tag(name = "Complaints", description = "Denuncias internas y seguimiento de revision.")
 public class ComplaintController {
 
     private final ComplaintService complaintService;
 
-    // GET - api/complaint
     @GetMapping
     @Operation(summary = "Listar denuncias", description = "Lista denuncias internas y permite filtrar por ID, titulo, estado y rango de fechas.")
     public ResponseEntity<List<ComplaintResponse>> findAll(ComplaintFilterDTO filters) {
@@ -34,40 +33,24 @@ public class ComplaintController {
         return ResponseEntity.ok(response);
     }
 
-    // POST - api/complaint
     @PostMapping
     @PreAuthorize("@securityAuthorizationService.canCreateComplaintForEmployeeDni(#request.dni())")
     @Operation(summary = "Crear denuncia", description = "Registra una denuncia asociada a un empleado activo. Al crearse queda en estado PENDING.")
     public ResponseEntity<ComplaintResponse> create(
             @P("request") @Valid @RequestBody ComplaintRequest request
     ) {
-
-        ComplaintResponse response = complaintService.create(request);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(complaintService.create(request));
     }
 
-    // PUT - api/complaint/{id_complaint}
+
     @PutMapping("/{id_complaint}")
-    @Operation(summary = "Actualizar estado de denuncia", description = "Actualiza el estado de una denuncia, por ejemplo de PENDING a REVIEWED.")
+    @Operation(summary = "Actualizar estado de denuncia", description = "Actualiza el estado de una denuncia. Una denuncia revisada no puede volver a modificarse.")
     public ResponseEntity<ComplaintResponse> updateStatus(
             @PathVariable("id_complaint") Long idComplaint,
             @Valid @RequestBody ComplaintStatusRequest request
     ) {
 
         ComplaintResponse response = complaintService.updateStatus(idComplaint, request);
-
-        return ResponseEntity.ok(response);
-    }
-
-    // PATCH - api/complaint/{id_complaint}/review
-    @PatchMapping("/{id_complaint}/review")
-    @Operation(summary = "Marcar denuncia como revisada", description = "Marca una denuncia como revisada sin enviar el objeto completo de actualizacion.")
-    public ResponseEntity<ComplaintResponse> markAsReviewed(
-            @PathVariable("id_complaint") Long idComplaint
-    ) {
-
-        ComplaintResponse response = complaintService.markAsReviewed(idComplaint);
 
         return ResponseEntity.ok(response);
     }

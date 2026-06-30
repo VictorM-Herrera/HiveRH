@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Complaint;
 
+import com.HiveGroup.HiveRH.Common.Utils.Enums.ComplaintStatusEnum;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import lombok.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;

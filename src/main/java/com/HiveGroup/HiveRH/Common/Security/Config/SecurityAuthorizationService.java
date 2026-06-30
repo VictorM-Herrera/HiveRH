@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Common.Security.Config;
 
+import com.HiveGroup.HiveRH.Common.Utils.Enums.LicenseStatusEnum;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
 import com.HiveGroup.HiveRH.Features.Certificate.CertificateRepository;
@@ -99,7 +100,7 @@ public class SecurityAuthorizationService {
 
         AccountEntity account = getCurrentAccount();
         return account != null && licenseRepository.findById(licenseId)
-                .map(license -> !license.isAccepted()
+                .map(license -> license.getStatus() == LicenseStatusEnum.PENDING
                         && license.getEmployee().getAccount() != null
                         && license.getEmployee().getAccount().getId_account().equals(account.getId_account()))
                 .orElse(false);
