@@ -18,7 +18,6 @@ import com.HiveGroup.HiveRH.Features.Position.PositionEntity;
 import com.HiveGroup.HiveRH.Features.Position.PositionRepository;
 import lombok.AllArgsConstructor;
 import org.hibernate.Hibernate;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -27,6 +26,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,6 +46,7 @@ public class EmployeeService {
     public EmployeeResponseDTO create(EmployeeCreateDTO employeeCreateDTO) {
 
         validateDniAvailable(employeeCreateDTO.dni());
+        validateAdult(employeeCreateDTO.birth_date());
 
         if (employeeCreateDTO.id_branch() == null) {
             throw new EntityNotFoundException("La sucursal es obligatoria", "Branch");
@@ -123,12 +125,12 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponseDTO putById(Long id, EmployeeUpdateDTO employeeUpdateDTO) {
+    public EmployeeResponseDTO putByDni(String dni, EmployeeUpdateDTO employeeUpdateDTO) {
 
-        EmployeeEntity employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado", "Employee"));
+        EmployeeEntity employee = findEmployeeByDni(dni);
 
-        validateUniqueDni(employeeUpdateDTO.dni(), id);
+        validateUniqueDni(employeeUpdateDTO.dni(), employee.getId_employee());
+        validateAdult(employeeUpdateDTO.birth_date());
 
         employee.setName(employeeUpdateDTO.name());
         employee.setLastName(employeeUpdateDTO.lastName());
@@ -154,13 +156,16 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeResponseDTO patchById(Long id, EmployeePatchDTO employeePatchDTO) {
+    public EmployeeResponseDTO patchByDni(String dni, EmployeePatchDTO employeePatchDTO) {
 
-        EmployeeEntity employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado", "Employee"));
+        EmployeeEntity employee = findEmployeeByDni(dni);
 
         if (employeePatchDTO.dni() != null) {
-            validateUniqueDni(employeePatchDTO.dni(), id);
+            validateUniqueDni(employeePatchDTO.dni(), employee.getId_employee());
+        }
+
+        if (employeePatchDTO.birth_date() != null) {
+            validateAdult(employeePatchDTO.birth_date());
         }
 
         employee.setName(employeePatchDTO.name() != null ? employeePatchDTO.name() : employee.getName());
@@ -189,9 +194,8 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public EmployeeResponseDTO findById(Long id) {
-        EmployeeEntity employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado", "Employee"));
+    public EmployeeResponseDTO findByDni(String dni) {
+        EmployeeEntity employee = findEmployeeByDni(dni);
 
         return toDTO(employee);
     }
@@ -208,14 +212,14 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmployeeResponseDTO> findAllbyFilter(EmployeeFilterDTO filters) {
+    public PageResponseDTO<EmployeeResponseDTO> findAllByFilter(EmployeeFilterDTO filters, Pageable pageable) {
         EmployeeFilterDTO activeFilters = filters != null
                 ? filters
                 : new EmployeeFilterDTO(null, null, null, null, null, null, null, null, null, null);
 
         List<EmployeeEntity> employeeList = employeeRepository.findAll();
 
-        return employeeList.stream()
+        List<EmployeeResponseDTO> filteredEmployees = employeeList.stream()
                 .map(this::toDTO)
                 .filter(employee -> TextSearchUtils.matchesFullName(employee.name(), employee.lastName(), activeFilters.fullName()))
                 .filter(employee -> activeFilters.dni() == null || employee.dni().equals(activeFilters.dni()))
@@ -228,22 +232,8 @@ public class EmployeeService {
                 .filter(employee -> activeFilters.min_salary() == null || employee.baseSalary() >= activeFilters.min_salary())
                 .filter(employee -> activeFilters.max_salary() == null || employee.baseSalary() <= activeFilters.max_salary())
                 .toList();
-    }
 
-    @Transactional(readOnly = true)
-    public PageResponseDTO<EmployeeResponseDTO> getAllPage(Pageable pageable) {
-        Page<EmployeeEntity> page = employeeRepository.findAll(pageable);
-
-        return new PageResponseDTO<>(
-                page.getContent()
-                        .stream()
-                        .map(this::toDTO)
-                        .toList(),
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages()
-        );
+        return toPageResponse(filteredEmployees, pageable);
     }
 
     private EmployeeResponseDTO toDTO(EmployeeEntity employee) {
@@ -299,6 +289,25 @@ public class EmployeeService {
         }
     }
 
+    private EmployeeEntity findEmployeeByDni(String dni) {
+        if (dni == null || dni.isBlank()) {
+            throw new IllegalArgumentException("El DNI es obligatorio");
+        }
+
+        return employeeRepository.findByDni(dni)
+                .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado para el DNI indicado", "Employee"));
+    }
+
+    private void validateAdult(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new IllegalArgumentException("La fecha de nacimiento es obligatoria");
+        }
+
+        if (Period.between(birthDate, LocalDate.now()).getYears() < 18) {
+            throw new IllegalArgumentException("El empleado debe tener al menos 18 años");
+        }
+    }
+
     private void validateUniqueDni(String dni, Long currentEmployeeId) {
         if (dni == null || dni.isBlank()) {
             throw new IllegalArgumentException("El DNI es obligatorio");
@@ -337,6 +346,37 @@ public class EmployeeService {
                         "AccountEntity"
                 ));
     }
+
+    private PageResponseDTO<EmployeeResponseDTO> toPageResponse(List<EmployeeResponseDTO> employees, Pageable pageable) {
+        if (pageable == null || pageable.isUnpaged()) {
+            return new PageResponseDTO<>(
+                    employees,
+                    0,
+                    employees.size(),
+                    employees.size(),
+                    employees.isEmpty() ? 0 : 1
+            );
+        }
+
+        int page = pageable.getPageNumber();
+        int size = pageable.getPageSize();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + size, employees.size());
+        List<EmployeeResponseDTO> content = start >= employees.size()
+                ? List.of()
+                : employees.subList(start, end);
+
+        int totalPages = (int) Math.ceil((double) employees.size() / size);
+
+        return new PageResponseDTO<>(
+                content,
+                page,
+                size,
+                employees.size(),
+                totalPages
+        );
+    }
+
     private void loadEmployeeAssignments(EmployeeEntity employee) {
         if (employee.getAssignments() != null) {
             Hibernate.initialize(employee.getAssignments());

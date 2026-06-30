@@ -22,7 +22,7 @@ public class PayrollMapper {
                 .idPayroll(payroll.getId_payroll())
                 .total(payroll.getTotal())
                 .payrollDate(payroll.getPayrollDate())
-                .idEmployee(payroll.getEmployee().getId_employee())
+                .dniEmployee(payroll.getEmployee().getDni())
                 .employeeName(
                         payroll.getEmployee().getName() + " " + payroll.getEmployee().getLastName()
                 )

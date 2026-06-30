@@ -30,6 +30,17 @@ public class SecurityAuthorizationService {
                 && account.getEmployee().getId_employee().equals(employeeId);
     }
 
+    public boolean canAccessEmployeeDni(String dni) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+            return true;
+        }
+
+        AccountEntity account = getCurrentAccount();
+        return account != null
+                && account.getEmployee() != null
+                && account.getEmployee().getDni().equals(dni);
+    }
+
     public boolean canAccessLicense(Long licenseId) {
         if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
             return true;

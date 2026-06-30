@@ -28,16 +28,16 @@ public class PayrollController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Listar liquidaciones", description = "Lista liquidaciones de sueldo. Requiere rol ADMIN o RRHH.")
-    public ResponseEntity<PageResponseDTO<PayrollResponse>> getAllPayrollsForPage(Pageable pageable) {
-        return ResponseEntity.ok(payrollService.getAllPages(pageable));
+    @Operation(summary = "Listar liquidaciones", description = "Lista liquidaciones de sueldo en formato paginado. Requiere rol ADMIN o RRHH.")
+    public ResponseEntity<PageResponseDTO<PayrollResponse>> getPayrolls(Pageable pageable) {
+        return ResponseEntity.ok(payrollService.getAllPage(pageable));
     }
 
-    @GetMapping("/employee/{id_employee}")
-    @PreAuthorize("@securityAuthorizationService.canAccessEmployee(#idEmployee)")
+    @GetMapping("/employee/{dni_employee}")
+    @PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dniEmployee)")
     @Operation(summary = "Listar liquidaciones por empleado", description = "Consulta liquidaciones de un empleado con filtros de fecha. Un empleado solo puede acceder a sus propias liquidaciones.")
     public ResponseEntity<List<PayrollResponse>> getPayrollsByEmployee(
-            @P("idEmployee") @PathVariable("id_employee") String dniEmployee,
+            @P("dniEmployee") @PathVariable("dni_employee") String dniEmployee,
             PayrollFilterDTO filters
     ) {
         return ResponseEntity.ok(payrollService.findAllByEmployee(dniEmployee, filters));

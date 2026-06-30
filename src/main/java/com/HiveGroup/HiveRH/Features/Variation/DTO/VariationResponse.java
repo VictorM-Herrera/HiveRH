@@ -10,7 +10,6 @@ import lombok.*;
 @Builder
 public class VariationResponse {
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long idVariation;
 
     private String title;

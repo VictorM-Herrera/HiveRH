@@ -26,8 +26,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/employees")
 @AllArgsConstructor
@@ -41,24 +39,18 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.findCurrentEmployee());
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("@securityAuthorizationService.canAccessEmployee(#id)")
-    @Operation(summary = "Consultar empleado por ID", description = "Obtiene el detalle de un empleado especifico. La autorizacion valida si el usuario puede acceder a ese empleado.")
-    public ResponseEntity<EmployeeResponseDTO> getEmployeeById(@P("id") @NonNull @PathVariable Long id) {
-        EmployeeResponseDTO employee = employeeService.findById(id);
+    @GetMapping("/{dni}")
+    @PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dni)")
+    @Operation(summary = "Consultar empleado por DNI", description = "Obtiene el detalle de un empleado especifico. La autorizacion valida si el usuario puede acceder a ese empleado.")
+    public ResponseEntity<EmployeeResponseDTO> getEmployeeByDni(@P("dni") @NonNull @PathVariable String dni) {
+        EmployeeResponseDTO employee = employeeService.findByDni(dni);
         return ResponseEntity.ok(employee);
     }
 
     @GetMapping
-    @Operation(summary = "Listar empleados", description = "Lista empleados y permite filtrar por datos personales, sucursal, fechas, estado, puesto, departamento o rango salarial.")
-    public ResponseEntity<List<EmployeeResponseDTO>> getEmployees(EmployeeFilterDTO filters) {
-        return ResponseEntity.ok(employeeService.findAllbyFilter(filters));
-    }
-
-    @GetMapping("/page")
-    @Operation(summary = "Listar empleados paginados", description = "Devuelve empleados en formato paginado utilizando los parametros Pageable de Spring.")
-    public ResponseEntity<PageResponseDTO<EmployeeResponseDTO>> getAllPageable(Pageable pageable) {
-        return ResponseEntity.ok(employeeService.getAllPage(pageable));
+    @Operation(summary = "Listar empleados", description = "Lista empleados en formato paginado y permite filtrar por datos personales, sucursal, fechas, estado, puesto, departamento o rango salarial.")
+    public ResponseEntity<PageResponseDTO<EmployeeResponseDTO>> getEmployees(EmployeeFilterDTO filters, Pageable pageable) {
+        return ResponseEntity.ok(employeeService.findAllByFilter(filters, pageable));
     }
 
     @PostMapping
@@ -67,16 +59,16 @@ public class EmployeeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(employeeCreateDTO));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{dni}")
     @Operation(summary = "Actualizar empleado parcialmente", description = "Modifica solo los campos enviados en el request.")
-    public ResponseEntity<EmployeeResponseDTO> patchEmployee(@PathVariable Long id, @Valid @RequestBody EmployeePatchDTO employeePatchDTO) {
-        return ResponseEntity.ok(employeeService.patchById(id, employeePatchDTO));
+    public ResponseEntity<EmployeeResponseDTO> patchEmployee(@PathVariable String dni, @Valid @RequestBody EmployeePatchDTO employeePatchDTO) {
+        return ResponseEntity.ok(employeeService.patchByDni(dni, employeePatchDTO));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{dni}")
     @Operation(summary = "Actualizar empleado", description = "Actualiza datos del empleado.")
-    public ResponseEntity<EmployeeResponseDTO> putEmployee(@NonNull @PathVariable Long id, @Valid @RequestBody EmployeeUpdateDTO employeeUpdateDTO) {
-        return ResponseEntity.ok(employeeService.putById(id, employeeUpdateDTO));
+    public ResponseEntity<EmployeeResponseDTO> putEmployee(@NonNull @PathVariable String dni, @Valid @RequestBody EmployeeUpdateDTO employeeUpdateDTO) {
+        return ResponseEntity.ok(employeeService.putByDni(dni, employeeUpdateDTO));
     }
 
     @DeleteMapping("/{dni}")
