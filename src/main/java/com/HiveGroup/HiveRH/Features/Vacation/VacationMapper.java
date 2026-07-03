@@ -14,10 +14,10 @@ public interface VacationMapper {
 
     @Mapping(target = "id_vacation", ignore = true)
     @Mapping(target = "requestDate", expression = "java(request.requestDate() != null ? request.requestDate() : LocalDate.now())")
-    @Mapping(source = "request.accepted", target = "accepted")
+    @Mapping(source = "request.accepted", target = "isAccepted")
     @Mapping(source = "request.startDate", target = "startDate")
     @Mapping(source = "request.endDate", target = "endDate")
-    @Mapping(source = "request.paid", target = "paid")
+    @Mapping(source = "request.paid", target = "isPaid")
     @Mapping(source = "employee", target = "employee")
     VacationEntity toEntity(VacationRequest request, EmployeeEntity employee);
 

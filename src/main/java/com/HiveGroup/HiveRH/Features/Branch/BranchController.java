@@ -25,7 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/branches")
 @AllArgsConstructor
-@Tag(name = "Branches", description = "Administracion de sucursales de la empresa.")
+@Tag(name = "03 Branches", description = "Administracion de sucursales de la empresa.")
 public class BranchController {
     private final BranchService branchService;
 

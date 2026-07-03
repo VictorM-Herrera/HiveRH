@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/accounts")
 @AllArgsConstructor
 @Validated
-@Tag(name = "Accounts", description = "Operacion sobre la cuenta autenticada y administracion de roles.")
+@Tag(name = "02 Accounts", description = "Operacion sobre la cuenta autenticada y administracion de roles.")
 public class AccountController {
     private final AccountService accountService;
 

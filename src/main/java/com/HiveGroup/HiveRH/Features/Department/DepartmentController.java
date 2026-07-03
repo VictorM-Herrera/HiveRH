@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,13 +29,13 @@ import java.util.List;
 @RequestMapping("/api/departments")
 @AllArgsConstructor
 @Validated
-@Tag(name = "Departments", description = "Administracion de departamentos internos.")
+@Tag(name = "04 Departments", description = "Administracion de departamentos internos.")
 public class DepartmentController {
     private final DepartmentService departmentService;
 
     @GetMapping
     @Operation(summary = "Listar departamentos", description = "Obtiene departamentos y permite filtrar por ID, nombre y estado activo.")
-    public ResponseEntity<List<DepartmentResponseDTO>> getDepartments(@Valid DepartmentFilterDTO filters) {
+    public ResponseEntity<List<DepartmentResponseDTO>> getDepartments(@ParameterObject @Valid DepartmentFilterDTO filters) {
         return ResponseEntity.ok(departmentService.findAllByFilter(filters));
     }
 

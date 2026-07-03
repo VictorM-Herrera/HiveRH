@@ -1,6 +1,7 @@
 package com.HiveGroup.HiveRH.Features.Account.DTO;
 
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ public record NewAccountDTO(
                 regexp = "^[a-zA-Z0-9._-]+$",
                 message = "El usuario solo puede contener letras, números, punto, guion y guion bajo"
         )
+        @Schema(description = "Nombre de usuario unico", example = "rrhh.demo")
         String user,
 
         @NotBlank(message = "El email es obligatorio")
@@ -27,6 +29,7 @@ public record NewAccountDTO(
                 max = 100,
                 message = "El email no puede superar los 100 caracteres"
         )
+        @Schema(description = "Email unico de la cuenta", example = "rrhh.demo@hiverh.local")
         String email,
 
         @NotBlank(message = "La contraseña temporal es obligatoria")
@@ -35,9 +38,11 @@ public record NewAccountDTO(
                 max = 72,
                 message = "La contraseña temporal debe tener entre 3 y 72 caracteres"
         )
+        @Schema(description = "Password temporal de la cuenta", example = "rrhh123")
         String password,
 
         @NotNull(message = "El rol es obligatorio")
+        @Schema(description = "Rol inicial de la cuenta", example = "RRHH")
         RolEnum rol
 ) {
 }

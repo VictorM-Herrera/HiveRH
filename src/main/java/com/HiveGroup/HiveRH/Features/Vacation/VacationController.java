@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +19,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/vacations")
 @RequiredArgsConstructor
-@Tag(name = "Vacations", description = "Solicitudes y registros de vacaciones.")
+@Tag(name = "09 Vacations", description = "Solicitudes y registros de vacaciones.")
 public class VacationController {
 
     private final VacationService vacationService;
 
     @GetMapping
     @Operation(summary = "Listar vacaciones", description = "Lista vacaciones en formato paginado y permite filtrar por estado de aceptacion, rango de fechas, DNI y nombre completo.")
-    public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(VacationFilterDTO filters, Pageable pageable) {
+    public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(
+            @ParameterObject VacationFilterDTO filters,
+            @ParameterObject Pageable pageable) {
 
         PageResponseDTO<VacationResponse> response = vacationService.findAllByFilter(filters, pageable);
 

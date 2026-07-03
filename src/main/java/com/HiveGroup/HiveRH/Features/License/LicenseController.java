@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,13 +30,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/licenses")
 @AllArgsConstructor
 @Validated
-@Tag(name = "Licenses", description = "Licencias de empleados y su estado de aprobacion.")
+@Tag(name = "10 Licenses", description = "Licencias de empleados y su estado de aprobacion.")
 public class LicenseController {
     LicenseService licenseService;
 
     @GetMapping
     @Operation(summary = "Listar licencias", description = "Lista licencias en formato paginado y permite filtrar por estado, DNI del empleado, rango de fechas y si es paga.")
-    public ResponseEntity<PageResponseDTO<LicenseDTO>> getLicenses(@Valid LicenseFilterDTO filters, Pageable pageable) {
+    public ResponseEntity<PageResponseDTO<LicenseDTO>> getLicenses(
+            @ParameterObject @Valid LicenseFilterDTO filters,
+            @ParameterObject Pageable pageable) {
         return ResponseEntity.ok().body(
                 licenseService.getAllLicensePage(filters, pageable)
         );

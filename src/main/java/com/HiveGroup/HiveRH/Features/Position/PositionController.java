@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,13 +29,13 @@ import java.util.List;
 @RequestMapping("/api/positions")
 @AllArgsConstructor
 @Validated
-@Tag(name = "Positions", description = "Administracion de puestos de trabajo.")
+@Tag(name = "05 Positions", description = "Administracion de puestos de trabajo.")
 public class PositionController {
     private final PositionService positionService;
 
     @GetMapping
     @Operation(summary = "Listar puestos", description = "Obtiene puestos de trabajo y permite filtrar por departamento, nombre y estado activo.")
-    public ResponseEntity<List<PositionResponseDTO>> getPositions(@Valid PositionFilterDTO filters) {
+    public ResponseEntity<List<PositionResponseDTO>> getPositions(@ParameterObject @Valid PositionFilterDTO filters) {
         return ResponseEntity.ok(positionService.findAllByFilter(filters));
     }
 

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +21,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/suspensions")
 @AllArgsConstructor
-@Tag(name = "Suspensions", description = "Suspensiones de empleados y cambio de estado asociado.")
+@Tag(name = "13 Suspensions", description = "Suspensiones de empleados y cambio de estado asociado.")
 public class SuspensionController {
     private final SuspensionService suspensionService;
 
     @GetMapping
     @Operation(summary = "Listar suspensiones", description = "Lista suspensiones y permite aplicar filtros disponibles.")
-    public ResponseEntity<List<SuspensionResponseDTO>> getSuspensions(@Valid SuspensionFilterDTO filters) {
+    public ResponseEntity<List<SuspensionResponseDTO>> getSuspensions(@ParameterObject @Valid SuspensionFilterDTO filters) {
         return ResponseEntity.ok(suspensionService.findAllByFilter(filters));
     }
 

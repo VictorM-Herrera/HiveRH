@@ -35,6 +35,10 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
 | `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
+| `BOOTSTRAP_ADMIN_ENABLED` | Crea un admin inicial al levantar la app | `true` |
+| `BOOTSTRAP_ADMIN_USER` | Usuario del admin inicial | `admin` |
+| `BOOTSTRAP_ADMIN_EMAIL` | Email del admin inicial | `admin@hiverh.local` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | Password del admin inicial, obligatoria si el bootstrap esta activo | `admin123` |
 
 Ejemplo:
 
@@ -46,6 +50,10 @@ EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
 EXPIRATION=86400000
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_USER=admin
+BOOTSTRAP_ADMIN_EMAIL=admin@hiverh.local
+BOOTSTRAP_ADMIN_PASSWORD=admin123
 ```
 
 Para Gmail se recomienda usar una password de aplicacion, no la password personal de la cuenta.
@@ -67,6 +75,15 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 ```
 
 Hibernate esta configurado con `ddl-auto: update`, por lo que puede crear o actualizar tablas dentro de esa base, pero no crea la base de datos MySQL desde cero.
+
+Para una prueba local desde cero se puede activar el bootstrap de admin con:
+
+```properties
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_PASSWORD=admin123
+```
+
+Al iniciar la aplicacion se crea una cuenta `ADMIN` si todavia no existe una cuenta con el mismo usuario o email. Este mecanismo esta pensado para demo/desarrollo; no se recomienda activarlo en produccion.
 
 ## Ejecucion local
 
@@ -101,7 +118,19 @@ Con la aplicacion levantada:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-Swagger esta liberado para facilitar pruebas y revision de contratos.
+Swagger esta liberado para facilitar pruebas y revision de contratos. Swagger no guarda datos por si mismo: ejecuta requests reales contra la API. Por eso, todo lo que se cree desde Swagger queda guardado en la base MySQL configurada en `DB_URL`.
+
+Flujo recomendado para probar desde Swagger:
+
+1. Levantar MySQL y crear la base `hiverh`.
+2. Configurar las variables de entorno, incluyendo el admin bootstrap si se quiere una demo rapida.
+3. Ejecutar la aplicacion.
+4. Entrar a `http://localhost:8080/swagger-ui.html`.
+5. Ejecutar `POST /api/auth/login` con el usuario admin.
+6. Copiar el token de la respuesta.
+7. Presionar `Authorize` y pegar el token como `Bearer <token>`.
+
+Una vez autorizado, Swagger envia el JWT en los endpoints protegidos.
 
 ## Endpoints base
 

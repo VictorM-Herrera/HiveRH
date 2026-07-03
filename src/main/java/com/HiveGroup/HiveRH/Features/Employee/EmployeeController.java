@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/employees")
 @AllArgsConstructor
-@Tag(name = "Employees", description = "Gestion de empleados, perfiles y bajas logicas.")
+@Tag(name = "06 Employees", description = "Gestion de empleados, perfiles y bajas logicas.")
 public class EmployeeController {
     private final EmployeeService employeeService;
 
@@ -49,7 +50,9 @@ public class EmployeeController {
 
     @GetMapping
     @Operation(summary = "Listar empleados", description = "Lista empleados en formato paginado y permite filtrar por datos personales, sucursal, fechas, estado, puesto, departamento o rango salarial.")
-    public ResponseEntity<PageResponseDTO<EmployeeResponseDTO>> getEmployees(EmployeeFilterDTO filters, Pageable pageable) {
+    public ResponseEntity<PageResponseDTO<EmployeeResponseDTO>> getEmployees(
+            @ParameterObject EmployeeFilterDTO filters,
+            @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(employeeService.findAllByFilter(filters, pageable));
     }
 

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,14 +20,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/complaints")
 @RequiredArgsConstructor
-@Tag(name = "Complaints", description = "Denuncias internas y seguimiento de revision.")
+@Tag(name = "12 Complaints", description = "Denuncias internas y seguimiento de revision.")
 public class ComplaintController {
 
     private final ComplaintService complaintService;
 
     @GetMapping
     @Operation(summary = "Listar denuncias", description = "Lista denuncias internas y permite filtrar por ID, titulo, estado y rango de fechas.")
-    public ResponseEntity<List<ComplaintResponse>> findAll(ComplaintFilterDTO filters) {
+    public ResponseEntity<List<ComplaintResponse>> findAll(@ParameterObject ComplaintFilterDTO filters) {
 
         List<ComplaintResponse> response = complaintService.findAllByFilter(filters);
 
