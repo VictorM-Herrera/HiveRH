@@ -1,5 +1,7 @@
 # HiveRH
 
+[English version](README.en.md)
+
 HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones, suspensiones, denuncias y certificados.
 
 El proyecto esta planteado como un MVP academico: el foco esta en tener reglas de negocio claras, autenticacion con JWT, permisos por rol y endpoints faciles de probar desde Postman o Swagger.

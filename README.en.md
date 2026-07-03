@@ -1,0 +1,236 @@
+# HiveRH
+
+[Version en espanol](README.md)
+
+HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, payroll records, leaves, vacations, suspensions, internal complaints, and certificates.
+
+The project is designed as an academic MVP. The main goal is to provide clear business rules, JWT authentication, role-based permissions, and endpoints that are easy to test from Postman or Swagger.
+
+## Documentation
+
+Detailed documentation is available in the `docs` folder:
+
+- `docs/Requerimiento.md`: functional scope and general system rules.
+- `docs/Informe_Entidades_Endpoints.md`: full walkthrough of entities, endpoints, and the recommended testing flow for Postman or project presentation.
+- `docs/Conceptual.md`: conceptual domain model.
+- `docs/DER.pdf`: entity-relationship diagram.
+
+This README is a quick guide to run and understand the project. For the complete endpoint details, check the full report.
+
+## Requirements
+
+- A JDK compatible with the project.
+- MySQL running locally or on an accessible server.
+- Maven Wrapper included in the repository (`mvnw.cmd` / `mvnw`), or Maven installed.
+- Environment variables configured in the environment used to run the application.
+
+## Configuration
+
+The application reads its configuration from `src/main/resources/application.yaml`. The required variables are:
+
+| Variable | Description | Example |
+|---|---|---|
+| `DB_URL` | MySQL JDBC URL | `jdbc:mysql://localhost:3306/hiverh` |
+| `DB_USER` | MySQL user | `root` |
+| `DB_PASSWORD` | MySQL password | `admin` |
+| `EMAIL_ADDRESS` | SMTP sender email address | `hiverh.notifications@gmail.com` |
+| `EMAIL_PASSWORD` | SMTP application password | `abcd efgh ijkl mnop` |
+| `SECRET` | Secret key used to sign JWT tokens | `super-secret-key-at-least-32-bytes` |
+| `EXPIRATION` | Token duration in milliseconds | `86400000` |
+| `BOOTSTRAP_ADMIN_ENABLED` | Creates an initial admin account on startup | `true` |
+| `BOOTSTRAP_ADMIN_USER` | Initial admin username | `admin` |
+| `BOOTSTRAP_ADMIN_EMAIL` | Initial admin email | `admin@hiverh.local` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | Initial admin password, required when bootstrap is enabled | `admin123` |
+
+Example:
+
+```properties
+DB_URL=jdbc:mysql://localhost:3306/hiverh
+DB_USER=root
+DB_PASSWORD=admin
+EMAIL_ADDRESS=hiverh.notifications@gmail.com
+EMAIL_PASSWORD=abcd efgh ijkl mnop
+SECRET=super-secret-key-at-least-32-bytes
+EXPIRATION=86400000
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_USER=admin
+BOOTSTRAP_ADMIN_EMAIL=admin@hiverh.local
+BOOTSTRAP_ADMIN_PASSWORD=admin123
+```
+
+For Gmail, use an application password instead of the personal account password.
+
+Using a `.env` file is optional. Each developer can configure these variables from IntelliJ IDEA, the terminal, system environment variables, or any execution environment they prefer.
+
+In IntelliJ IDEA:
+
+```text
+Run/Debug Configurations > Environment variables
+```
+
+## Database
+
+HiveRH uses MySQL. Before starting the application, the database must exist:
+
+```sql
+CREATE DATABASE IF NOT EXISTS hiverh;
+```
+
+Hibernate is configured with `ddl-auto: update`, so it can create or update tables inside that database, but it does not create the MySQL database itself.
+
+For a fresh local demo, the initial admin bootstrap can be enabled with:
+
+```properties
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_PASSWORD=admin123
+```
+
+When the application starts, it creates an `ADMIN` account if no account exists with the same username or email. This mechanism is intended for demo and development environments only; it is not recommended for production.
+
+## Local Run
+
+By default, the API is available at:
+
+```text
+http://localhost:8080
+```
+
+## Authentication
+
+The API uses JWT. To call protected endpoints:
+
+1. Execute `POST /api/auth/login`.
+2. Copy the returned token.
+3. Send the token in each protected request:
+
+```http
+Authorization: Bearer <token>
+```
+
+Main roles:
+
+- `ADMIN`: manages the whole system.
+- `RRHH`: manages employees, leaves, vacations, suspensions, complaints, and payroll records.
+- `EMPLOYEE`: can view and operate on their own resources when the business rule allows it.
+
+## Swagger
+
+With the application running:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+Swagger is exposed to make testing and contract review easier. Swagger does not store data by itself: it sends real requests to the API. Any data created from Swagger is persisted in the MySQL database configured through `DB_URL`.
+
+Recommended Swagger testing flow:
+
+1. Start MySQL and create the `hiverh` database.
+2. Configure the environment variables, including the admin bootstrap if a quick demo is needed.
+3. Run the application.
+4. Open `http://localhost:8080/swagger-ui.html`.
+5. Execute `POST /api/auth/login` with the admin user.
+6. Copy the token from the response.
+7. Press `Authorize` and paste the token.
+
+Once authorized, Swagger sends the JWT when calling protected endpoints.
+
+## Base Endpoints
+
+The complete endpoint details are available in `docs/Informe_Entidades_Endpoints.md`. As a quick reference, the main modules are:
+
+| Module | Base path |
+|---|---|
+| Auth | `/api/auth` |
+| Accounts | `/api/accounts` |
+| Employees | `/api/employees` |
+| Branches | `/api/branches` |
+| Departments | `/api/departments` |
+| Positions | `/api/positions` |
+| Variations | `/api/variations` |
+| Payrolls | `/api/payrolls` |
+| Licenses | `/api/licenses` |
+| Certificates | `/api/certificates` |
+| Vacations | `/api/vacations` |
+| Complaints | `/api/complaints` |
+| Suspensions | `/api/suspensions` |
+
+Filters in `GET` endpoints are sent as query params. It is not necessary to send every filter: one, several, or none can be provided.
+
+Examples:
+
+```http
+GET /api/employees?dni=43917621&page=0&size=10
+GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
+GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+```
+
+## Pagination
+
+Paginated endpoints use Spring `Pageable` parameters:
+
+```http
+page=0
+size=10
+sort=startDate,desc
+```
+
+`page` starts at 0. `sort` is optional and orders the result without changing the applied filters.
+
+Paginated endpoints:
+
+| Module | Endpoint |
+|---|---|
+| Employees | `GET /api/employees` |
+| Licenses | `GET /api/licenses` |
+| Payrolls | `GET /api/payrolls` |
+| Vacations | `GET /api/vacations` |
+
+Examples:
+
+```http
+GET /api/employees?page=0&size=10
+GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
+GET /api/payrolls?page=0&size=10
+GET /api/vacations?dniEmployee=43917621&page=0&size=10
+```
+
+## Important Rules
+
+- An employee cannot view another employee's payroll records.
+- `RRHH` and `ADMIN` can view any employee payroll records.
+- Only `RRHH` and `ADMIN` can create, update, or delete payroll records.
+- Two payroll records cannot be created for the same employee in the same month.
+- Employees can delete their own leave or vacation requests only if they have not been accepted.
+- `RRHH` does not delete leave or vacation requests; it manages, approves, or rejects them.
+- `ADMIN` can manage all resources.
+- Internal complaints can only be listed or reviewed by `RRHH` or `ADMIN`.
+
+## Common Errors
+
+- `401 Unauthorized`: the token is missing or invalid.
+- `403 Forbidden`: the user is authenticated but does not have permission for that action.
+- `404 Not Found`: the requested resource does not exist.
+- `415 Unsupported Media Type`: the `Content-Type` does not match what the endpoint expects. For example, sending JSON to an endpoint that expects `multipart/form-data`.
+
+## Tech Stack
+
+- Java
+- Spring Boot
+- Spring Web MVC
+- Spring Security
+- JWT with `jjwt`
+- Spring Data JPA
+- Hibernate
+- MySQL
+- Bean Validation / Jakarta Validation
+- Lombok
+- MapStruct
+- Springdoc OpenAPI / Swagger UI
+- Maven
+
+## Authors
+
+- Gallego Romero Gonzalo N.
+- Herrera Victor M.
+- Molina Cristian N.
+- Romero Rajoy Jose L.
