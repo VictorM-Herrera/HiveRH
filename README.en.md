@@ -19,10 +19,11 @@ This README is a quick guide to run and understand the project. For the complete
 
 ## Requirements
 
-- A JDK compatible with the project.
+- JDK 17 or newer.
 - MySQL running locally or on an accessible server.
 - Maven Wrapper included in the repository (`mvnw.cmd` / `mvnw`), or Maven installed.
 - Environment variables configured in the environment used to run the application.
+- Docker and Docker Compose, optional for running the API and MySQL with a single command.
 
 ## Configuration
 
@@ -62,6 +63,8 @@ For Gmail, use an application password instead of the personal account password.
 
 Using a `.env` file is optional. Each developer can configure these variables from IntelliJ IDEA, the terminal, system environment variables, or any execution environment they prefer.
 
+The repository includes `.env.sample` as a template. It can be copied to `.env` and adjusted locally without committing secrets.
+
 In IntelliJ IDEA:
 
 ```text
@@ -94,6 +97,41 @@ By default, the API is available at:
 ```text
 http://localhost:8080
 ```
+
+With Maven Wrapper:
+
+```bash
+./mvnw spring-boot:run
+```
+
+On Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+## Docker Run
+
+The repository includes `Dockerfile` and `docker-compose.yml` to run MySQL and the API in a local/demo environment:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- API: `http://localhost:8080`
+- MySQL: `localhost:3307`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+The Compose setup creates a demo `ADMIN` account:
+
+```text
+User: admin
+Password: admin123
+```
+
+This setup is intended for development and portfolio demos. Do not use these credentials in production.
 
 ## Authentication
 
@@ -130,7 +168,7 @@ Recommended Swagger testing flow:
 4. Open `http://localhost:8080/swagger-ui.html`.
 5. Execute `POST /api/auth/login` with the admin user.
 6. Copy the token from the response.
-7. Press `Authorize` and paste the token.
+7. Press `Authorize` and paste only the JWT token.
 
 Once authorized, Swagger sends the JWT when calling protected endpoints.
 

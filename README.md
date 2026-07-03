@@ -19,10 +19,11 @@ Este README queda como guia rapida para levantar y entender el proyecto. Para el
 
 ## Requisitos
 
-- JDK compatible con el proyecto.
+- JDK 17 o superior.
 - MySQL corriendo localmente o en un servidor accesible.
 - Maven Wrapper incluido en el repositorio (`mvnw.cmd` / `mvnw`), o Maven instalado.
 - Variables de entorno configuradas en el entorno de ejecucion elegido.
+- Docker y Docker Compose, opcional para levantar API + MySQL con un solo comando.
 
 ## Configuracion
 
@@ -62,6 +63,8 @@ Para Gmail se recomienda usar una password de aplicacion, no la password persona
 
 No es obligatorio usar un archivo `.env`. Cada integrante puede configurar estas variables como prefiera: desde IntelliJ IDEA, desde la terminal, desde variables del sistema operativo o desde el entorno que use para ejecutar la aplicacion.
 
+El repositorio incluye `.env.sample` como plantilla. Se puede copiar a `.env` y ajustar valores locales sin subir secretos al repositorio.
+
 En IntelliJ IDEA:
 
 ```text
@@ -94,6 +97,41 @@ La API queda disponible por defecto en:
 ```text
 http://localhost:8080
 ```
+
+Con Maven Wrapper:
+
+```bash
+./mvnw spring-boot:run
+```
+
+En Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+## Ejecucion con Docker
+
+El repositorio incluye `Dockerfile` y `docker-compose.yml` para levantar MySQL y la API en entorno local/demo:
+
+```bash
+docker compose up --build
+```
+
+Servicios:
+
+- API: `http://localhost:8080`
+- MySQL: `localhost:3307`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+El Compose crea una cuenta demo `ADMIN`:
+
+```text
+Usuario: admin
+Password: admin123
+```
+
+Este entorno esta pensado para desarrollo y portfolio. No usar esas credenciales en produccion.
 
 ## Autenticacion
 
@@ -130,7 +168,7 @@ Flujo recomendado para probar desde Swagger:
 4. Entrar a `http://localhost:8080/swagger-ui.html`.
 5. Ejecutar `POST /api/auth/login` con el usuario admin.
 6. Copiar el token de la respuesta.
-7. Presionar `Authorize` y pegar el token como `Bearer <token>`.
+7. Presionar `Authorize` y pegar solo el token JWT.
 
 Una vez autorizado, Swagger envia el JWT en los endpoints protegidos.
 
