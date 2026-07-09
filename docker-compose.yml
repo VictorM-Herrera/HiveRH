@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: hiverh-mysql
+    environment:
+      MYSQL_DATABASE: hiverh
+      MYSQL_ROOT_PASSWORD: admin
+    ports:
+      - "3307:3306"
+    volumes:
+      - hiverh_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-padmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: hiverh-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/hiverh
+      DB_USER: root
+      DB_PASSWORD: admin
+      EMAIL_ADDRESS: hiverh.notifications@example.com
+      EMAIL_PASSWORD: change-me
+      SECRET: change-this-demo-secret-key-32-bytes-min
+      EXPIRATION: 86400000
+      BOOTSTRAP_ADMIN_ENABLED: true
+      BOOTSTRAP_ADMIN_USER: admin
+      BOOTSTRAP_ADMIN_EMAIL: admin@hiverh.local
+      BOOTSTRAP_ADMIN_PASSWORD: admin123
+    ports:
+      - "8080:8080"
+
+volumes:
+  hiverh_mysql_data:

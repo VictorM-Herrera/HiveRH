@@ -3,48 +3,33 @@ package com.HiveGroup.HiveRH.Features.Vacation;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationRequest;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationResponse;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Component
-public class VacationMapper {
+@Mapper(componentModel = "spring", imports = LocalDate.class)
+public interface VacationMapper {
 
-    public VacationEntity toEntity(VacationRequest request, EmployeeEntity employee) {
+    @Mapping(target = "id_vacation", ignore = true)
+    @Mapping(target = "requestDate", expression = "java(request.requestDate() != null ? request.requestDate() : LocalDate.now())")
+    @Mapping(source = "request.accepted", target = "isAccepted")
+    @Mapping(source = "request.startDate", target = "startDate")
+    @Mapping(source = "request.endDate", target = "endDate")
+    @Mapping(source = "request.paid", target = "isPaid")
+    @Mapping(source = "employee", target = "employee")
+    VacationEntity toEntity(VacationRequest request, EmployeeEntity employee);
 
-        return VacationEntity.builder()
-                .requestDate(
-                        request.requestDate() != null
-                                ? request.requestDate()
-                                : LocalDate.now()
-                )
-                .isAccepted(request.accepted())
-                .startDate(request.startDate())
-                .endDate(request.endDate())
-                .isPaid(request.paid())
-                .employee(employee)
-                .build();
-    }
+    @Mapping(source = "id_vacation", target = "idVacation")
+    @Mapping(source = "employee.dni", target = "dniEmployee")
+    @Mapping(target = "employeeName", expression = "java(getEmployeeName(vacation))")
+    VacationResponse toResponse(VacationEntity vacation);
 
-    public VacationResponse toResponse(VacationEntity vacation) {
+    List<VacationResponse> toResponseList(List<VacationEntity> vacations);
 
-        return new VacationResponse(
-                vacation.getId_vacation(),
-                vacation.getRequestDate(),
-                vacation.isAccepted(),
-                vacation.getStartDate(),
-                vacation.getEndDate(),
-                vacation.isPaid(),
-                vacation.getEmployee().getId_employee(),
-                vacation.getEmployee().getName() + " " + vacation.getEmployee().getLastName()
-        );
-    }
-
-    public List<VacationResponse> toResponseList(List<VacationEntity> vacations) {
-
-        return vacations.stream()
-                .map(this::toResponse)
-                .toList();
+    default String getEmployeeName(VacationEntity vacation) {
+        EmployeeEntity employee = vacation.getEmployee();
+        return employee.getName() + " " + employee.getLastName();
     }
 }

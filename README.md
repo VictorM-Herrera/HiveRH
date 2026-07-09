@@ -1,5 +1,7 @@
 # HiveRH
 
+[English version](README.en.md)
+
 HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones, suspensiones, denuncias y certificados.
 
 El proyecto esta planteado como un MVP academico: el foco esta en tener reglas de negocio claras, autenticacion con JWT, permisos por rol y endpoints faciles de probar desde Postman o Swagger.
@@ -17,10 +19,11 @@ Este README queda como guia rapida para levantar y entender el proyecto. Para el
 
 ## Requisitos
 
-- JDK compatible con el proyecto.
+- JDK 17 o superior.
 - MySQL corriendo localmente o en un servidor accesible.
 - Maven Wrapper incluido en el repositorio (`mvnw.cmd` / `mvnw`), o Maven instalado.
 - Variables de entorno configuradas en el entorno de ejecucion elegido.
+- Docker y Docker Compose, opcional para levantar API + MySQL con un solo comando.
 
 ## Configuracion
 
@@ -31,8 +34,14 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `DB_URL` | URL JDBC de la base MySQL | `jdbc:mysql://localhost:3306/hiverh` |
 | `DB_USER` | Usuario de MySQL | `root` |
 | `DB_PASSWORD` | Password de MySQL | `admin` |
+| `EMAIL_ADDRESS` | Email usado como remitente SMTP | `hiverh.notificaciones@gmail.com` |
+| `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
 | `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
+| `BOOTSTRAP_ADMIN_ENABLED` | Crea un admin inicial al levantar la app | `true` |
+| `BOOTSTRAP_ADMIN_USER` | Usuario del admin inicial | `admin` |
+| `BOOTSTRAP_ADMIN_EMAIL` | Email del admin inicial | `admin@hiverh.local` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | Password del admin inicial, obligatoria si el bootstrap esta activo | `admin123` |
 
 Ejemplo:
 
@@ -40,11 +49,21 @@ Ejemplo:
 DB_URL=jdbc:mysql://localhost:3306/hiverh
 DB_USER=root
 DB_PASSWORD=admin
+EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
+EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
 EXPIRATION=86400000
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_USER=admin
+BOOTSTRAP_ADMIN_EMAIL=admin@hiverh.local
+BOOTSTRAP_ADMIN_PASSWORD=admin123
 ```
 
+Para Gmail se recomienda usar una password de aplicacion, no la password personal de la cuenta.
+
 No es obligatorio usar un archivo `.env`. Cada integrante puede configurar estas variables como prefiera: desde IntelliJ IDEA, desde la terminal, desde variables del sistema operativo o desde el entorno que use para ejecutar la aplicacion.
+
+El repositorio incluye `.env.sample` como plantilla. Se puede copiar a `.env` y ajustar valores locales sin subir secretos al repositorio.
 
 En IntelliJ IDEA:
 
@@ -62,6 +81,15 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 
 Hibernate esta configurado con `ddl-auto: update`, por lo que puede crear o actualizar tablas dentro de esa base, pero no crea la base de datos MySQL desde cero.
 
+Para una prueba local desde cero se puede activar el bootstrap de admin con:
+
+```properties
+BOOTSTRAP_ADMIN_ENABLED=true
+BOOTSTRAP_ADMIN_PASSWORD=admin123
+```
+
+Al iniciar la aplicacion se crea una cuenta `ADMIN` si todavia no existe una cuenta con el mismo usuario o email. Este mecanismo esta pensado para demo/desarrollo; no se recomienda activarlo en produccion.
+
 ## Ejecucion local
 
 La API queda disponible por defecto en:
@@ -69,6 +97,41 @@ La API queda disponible por defecto en:
 ```text
 http://localhost:8080
 ```
+
+Con Maven Wrapper:
+
+```bash
+./mvnw spring-boot:run
+```
+
+En Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+## Ejecucion con Docker
+
+El repositorio incluye `Dockerfile` y `docker-compose.yml` para levantar MySQL y la API en entorno local/demo:
+
+```bash
+docker compose up --build
+```
+
+Servicios:
+
+- API: `http://localhost:8080`
+- MySQL: `localhost:3307`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+El Compose crea una cuenta demo `ADMIN`:
+
+```text
+Usuario: admin
+Password: admin123
+```
+
+Este entorno esta pensado para desarrollo y portfolio. No usar esas credenciales en produccion.
 
 ## Autenticacion
 
@@ -95,7 +158,19 @@ Con la aplicacion levantada:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
-Swagger esta liberado para facilitar pruebas y revision de contratos.
+Swagger esta liberado para facilitar pruebas y revision de contratos. Swagger no guarda datos por si mismo: ejecuta requests reales contra la API. Por eso, todo lo que se cree desde Swagger queda guardado en la base MySQL configurada en `DB_URL`.
+
+Flujo recomendado para probar desde Swagger:
+
+1. Levantar MySQL y crear la base `hiverh`.
+2. Configurar las variables de entorno, incluyendo el admin bootstrap si se quiere una demo rapida.
+3. Ejecutar la aplicacion.
+4. Entrar a `http://localhost:8080/swagger-ui.html`.
+5. Ejecutar `POST /api/auth/login` con el usuario admin.
+6. Copiar el token de la respuesta.
+7. Presionar `Authorize` y pegar solo el token JWT.
+
+Una vez autorizado, Swagger envia el JWT en los endpoints protegidos.
 
 ## Endpoints base
 
@@ -106,25 +181,55 @@ El detalle completo de endpoints esta en `docs/Informe_Entidades_Endpoints.md`. 
 | Auth | `/api/auth` |
 | Accounts | `/api/accounts` |
 | Employees | `/api/employees` |
-| Branches | `/api/branch` |
-| Departments | `/api/department` |
-| Positions | `/api/position` |
+| Branches | `/api/branches` |
+| Departments | `/api/departments` |
+| Positions | `/api/positions` |
 | Variations | `/api/variations` |
 | Payrolls | `/api/payrolls` |
-| Licenses | `/api/license` |
-| Certificates | `/api/certificate` |
-| Vacations | `/api/vacation` |
-| Complaints | `/api/complaint` |
-| Suspensions | `/api/suspension` |
+| Licenses | `/api/licenses` |
+| Certificates | `/api/certificates` |
+| Vacations | `/api/vacations` |
+| Complaints | `/api/complaints` |
+| Suspensions | `/api/suspensions` |
 
 Los filtros en endpoints `GET` se envian por query params. No hace falta mandar todos los filtros: se puede enviar uno, varios o ninguno.
 
 Ejemplos:
 
 ```http
-GET /api/employees?dni=43917621
-GET /api/vacation?accepted=false&fullName=Juan Perez
-GET /api/payrolls/employee/3?startDate=2026-01-01&endDate=2026-06-30
+GET /api/employees?dni=43917621&page=0&size=10
+GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
+GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+```
+
+## Paginacion
+
+Los endpoints paginados usan los parametros estandar de Spring `Pageable`:
+
+```http
+page=0
+size=10
+sort=startDate,desc
+```
+
+`page` empieza en 0. `sort` es opcional y ordena los resultados sin cambiar los filtros aplicados.
+
+Endpoints con paginacion:
+
+| Modulo | Endpoint |
+|---|---|
+| Employees | `GET /api/employees` |
+| Licenses | `GET /api/licenses` |
+| Payrolls | `GET /api/payrolls` |
+| Vacations | `GET /api/vacations` |
+
+Ejemplos:
+
+```http
+GET /api/employees?page=0&size=10
+GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
+GET /api/payrolls?page=0&size=10
+GET /api/vacations?dniEmployee=43917621&page=0&size=10
 ```
 
 ## Reglas importantes

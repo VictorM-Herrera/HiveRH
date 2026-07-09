@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Vacation;
 
+import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationFilterDTO;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationRequest;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationResponse;
@@ -7,33 +8,35 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/vacation")
+@RequestMapping("/api/vacations")
 @RequiredArgsConstructor
-@Tag(name = "Vacations", description = "Solicitudes y registros de vacaciones.")
+@Tag(name = "09 Vacations", description = "Solicitudes y registros de vacaciones.")
 public class VacationController {
 
     private final VacationService vacationService;
 
     @GetMapping
-    @Operation(summary = "Listar vacaciones", description = "Lista vacaciones y permite filtrar por estado de aceptacion, rango de fechas y nombre completo.")
-    public ResponseEntity<List<VacationResponse>> findAll(VacationFilterDTO filters) {
+    @Operation(summary = "Listar vacaciones", description = "Lista vacaciones en formato paginado y permite filtrar por estado de aceptacion, rango de fechas, DNI y nombre completo.")
+    public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(
+            @ParameterObject VacationFilterDTO filters,
+            @ParameterObject Pageable pageable) {
 
-        List<VacationResponse> response = vacationService.findAllByFilter(filters);
+        PageResponseDTO<VacationResponse> response = vacationService.findAllByFilter(filters, pageable);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    @PreAuthorize("@securityAuthorizationService.canCreateVacationForEmployee(#request.dniEmployee())")
+    @PreAuthorize("@securityAuthorizationService.canCreateVacationForEmployeeDni(#request.dniEmployee())")
     @Operation(summary = "Registrar vacaciones", description = "Registra vacaciones para un empleado activo. Valida fechas y evita superposiciones para el mismo empleado.")
     public ResponseEntity<VacationResponse> create(@P("request") @Valid @RequestBody VacationRequest request) {
 

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,24 +22,24 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/payrolls")
 @AllArgsConstructor
-@Tag(name = "Payrolls", description = "Liquidaciones de sueldo y consultas por empleado.")
+@Tag(name = "08 Payrolls", description = "Liquidaciones de sueldo y consultas por empleado.")
 public class PayrollController {
 
     private final PayrollService payrollService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Listar liquidaciones", description = "Lista liquidaciones de sueldo. Requiere rol ADMIN o RRHH.")
-    public ResponseEntity<PageResponseDTO<PayrollResponse>> getAllPayrollsForPage(Pageable pageable) {
-        return ResponseEntity.ok(payrollService.getAllPages(pageable));
+    @Operation(summary = "Listar liquidaciones", description = "Lista liquidaciones de sueldo en formato paginado. Requiere rol ADMIN o RRHH.")
+    public ResponseEntity<PageResponseDTO<PayrollResponse>> getPayrolls(@ParameterObject Pageable pageable) {
+        return ResponseEntity.ok(payrollService.getAllPage(pageable));
     }
 
-    @GetMapping("/employee/{id_employee}")
-    @PreAuthorize("@securityAuthorizationService.canAccessEmployee(#idEmployee)")
+    @GetMapping("/employee/{dni_employee}")
+    @PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dniEmployee)")
     @Operation(summary = "Listar liquidaciones por empleado", description = "Consulta liquidaciones de un empleado con filtros de fecha. Un empleado solo puede acceder a sus propias liquidaciones.")
     public ResponseEntity<List<PayrollResponse>> getPayrollsByEmployee(
-            @P("idEmployee") @PathVariable("id_employee") String dniEmployee,
-            PayrollFilterDTO filters
+            @P("dniEmployee") @PathVariable("dni_employee") String dniEmployee,
+            @ParameterObject PayrollFilterDTO filters
     ) {
         return ResponseEntity.ok(payrollService.findAllByEmployee(dniEmployee, filters));
     }

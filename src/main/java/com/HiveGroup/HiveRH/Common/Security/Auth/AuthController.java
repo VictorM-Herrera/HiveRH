@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Auth", description = "Autenticacion y registro de cuentas para obtener acceso al sistema.")
+@Tag(name = "01 Auth", description = "Autenticacion y registro de cuentas para obtener acceso al sistema.")
 public class AuthController {
     private final AuthService authService;
     private final AccountService accountService;

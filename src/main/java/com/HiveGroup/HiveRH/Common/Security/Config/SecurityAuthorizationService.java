@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Common.Security.Config;
 
+import com.HiveGroup.HiveRH.Common.Utils.Enums.LicenseStatusEnum;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
 import com.HiveGroup.HiveRH.Features.Certificate.CertificateRepository;
@@ -27,6 +28,17 @@ public class SecurityAuthorizationService {
         return account != null
                 && account.getEmployee() != null
                 && account.getEmployee().getId_employee().equals(employeeId);
+    }
+
+    public boolean canAccessEmployeeDni(String dni) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+            return true;
+        }
+
+        AccountEntity account = getCurrentAccount();
+        return account != null
+                && account.getEmployee() != null
+                && account.getEmployee().getDni().equals(dni);
     }
 
     public boolean canAccessLicense(Long licenseId) {
@@ -69,6 +81,14 @@ public class SecurityAuthorizationService {
         return canAccessEmployee(employeeId);
     }
 
+    public boolean canCreateVacationForEmployeeDni(String dni) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+            return true;
+        }
+
+        return canAccessEmployeeDni(dni);
+    }
+
     public boolean canCreateComplaintForEmployee(Long employeeId) {
         if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
             return true;
@@ -99,7 +119,7 @@ public class SecurityAuthorizationService {
 
         AccountEntity account = getCurrentAccount();
         return account != null && licenseRepository.findById(licenseId)
-                .map(license -> !license.isAccepted()
+                .map(license -> license.getStatus() == LicenseStatusEnum.PENDING
                         && license.getEmployee().getAccount() != null
                         && license.getEmployee().getAccount().getId_account().equals(account.getId_account()))
                 .orElse(false);

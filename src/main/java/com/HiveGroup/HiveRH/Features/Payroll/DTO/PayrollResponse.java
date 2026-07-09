@@ -13,15 +13,13 @@ import java.util.List;
 @Builder
 public class PayrollResponse {
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long idPayroll;
 
     private Double total;
 
     private LocalDate payrollDate;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private Long idEmployee;
+    private String dniEmployee;
 
     private String employeeName;
 

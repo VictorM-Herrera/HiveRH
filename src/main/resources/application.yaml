@@ -36,4 +36,11 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
 
+hiverh:
+  bootstrap-admin:
+    enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+    user: ${BOOTSTRAP_ADMIN_USER:admin}
+    email: ${BOOTSTRAP_ADMIN_EMAIL:admin@hiverh.local}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+
 

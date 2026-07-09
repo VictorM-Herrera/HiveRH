@@ -1,12 +1,13 @@
 package com.HiveGroup.HiveRH.Features.Certificate;
 
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.CertificateDTO;
+import com.HiveGroup.HiveRH.Features.Certificate.DTO.RequestCertificateDTO;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.ResponseCertificateDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,27 +18,25 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 @AllArgsConstructor
 @Validated
-@Tag(name = "Certificates", description = "Carga, consulta y descarga de certificados PDF.")
+@Tag(name = "11 Certificates", description = "Carga, consulta y descarga de certificados PDF.")
 public class CertificateController {
     CertificateService certificateService;
 
-    @PostMapping("/api/certificate")
-    @PreAuthorize("@securityAuthorizationService.canAccessLicense(#idLicense)")
+    @PostMapping(value = "/api/certificates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@securityAuthorizationService.canAccessLicense(#request.idLicense())")
     @Operation(summary = "Cargar certificado PDF", description = "Carga un archivo PDF mediante multipart/form-data y lo asocia a una licencia.")
     public ResponseEntity<CertificateDTO> createCertificate(
-            @P("idLicense") @RequestParam("idLicense") @NotNull @Positive(message = "El ID de la licencia debe ser mayor que cero") Long idLicense,
-            @RequestParam("description") @Size(max = 255, message = "La descripcion no puede superar los 255 caracteres") String description,
-            @RequestParam("file") @NotNull(message = "El archivo del certificado es obligatorio") MultipartFile file) {
+            @P("request") @Valid @ModelAttribute RequestCertificateDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(certificateService.createCertificate(idLicense, description, file));
+                .body(certificateService.createCertificate(request.idLicense(), request.description(), request.file()));
     }
 
     @GetMapping("/api/certificate/{id_certificate}")

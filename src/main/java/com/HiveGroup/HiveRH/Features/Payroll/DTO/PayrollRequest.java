@@ -18,9 +18,6 @@ public class PayrollRequest {
     @NotNull(message = "La fecha de liquidación es obligatoria")
     private LocalDate payrollDate;
 
-//    @NotNull(message = "El empleado es obligatorio")
-//    private Long idEmployee;
-
     @NotBlank(message = "El DNI es obligatorio")
     @Pattern(
             regexp = "^\\d{7,8}$",

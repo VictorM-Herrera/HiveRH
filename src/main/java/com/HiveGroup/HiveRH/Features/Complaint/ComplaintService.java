@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Complaint;
 
+import com.HiveGroup.HiveRH.Common.Utils.Enums.ComplaintStatusEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Common.Utils.Services.NotificationService;
@@ -28,7 +29,6 @@ public class ComplaintService {
     @Transactional
     public ComplaintResponse create(ComplaintRequest request) {
 
-        //validateRequest(request);
         EmployeeEntity employee = employeeRepository.findByDni(request.dni())
                 .orElseThrow(() -> new EntityNotFoundException("DNI NO ENCONTRADO", "EMPLOYEE"));
 
@@ -78,30 +78,15 @@ public class ComplaintService {
 
         ComplaintEntity complaint = findComplaintById(idComplaint);
 
+        validateCanUpdateStatus(complaint);
+
         complaint.setStatus(request.status());
 
         ComplaintEntity updatedComplaint = complaintRepository.save(complaint);
 
-        return complaintMapper.toResponse(updatedComplaint);
-    }
-
-
-    @Transactional
-    public ComplaintResponse markAsReviewed(Long idComplaint) {
-
-        ComplaintEntity complaint = findComplaintById(idComplaint);
-
-        complaint.setStatus(ComplaintStatusEnum.REVIEWED);
-
-        ComplaintEntity updatedComplaint = complaintRepository.save(complaint);
-
-        notificationService.notify(complaint.getEmployee().getAccount().getEmail(),
-                """
-                        Buen dia,
-                        Se ha revisado la denuncia, nos contactaremos a la brevedad.
-                        
-                        Muchas gracias.
-                        """);
+        if (updatedComplaint.getStatus() == ComplaintStatusEnum.REVIEWED) {
+            notifyReviewedComplaint(updatedComplaint);
+        }
 
         return complaintMapper.toResponse(updatedComplaint);
     }
@@ -114,32 +99,6 @@ public class ComplaintService {
                         "Denuncia no encontrada",
                         "Complaint"
                 ));
-    }
-
-
-    private EmployeeEntity findEmployeeById(Long idEmployee) {
-
-        return employeeRepository.findById(idEmployee)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Empleado no encontrado",
-                        "Employee"
-                ));
-    }
-
-
-    private void validateRequest(ComplaintRequest request) {
-
-        if (request.title() == null || request.title().isBlank()) {
-            throw new IllegalArgumentException("El título es obligatorio");
-        }
-
-        if (request.description() == null || request.description().isBlank()) {
-            throw new IllegalArgumentException("La descripción es obligatoria");
-        }
-
-        if (request.dni() == null) {
-            throw new IllegalArgumentException("El empleado es obligatorio");
-        }
     }
 
 
@@ -156,6 +115,26 @@ public class ComplaintService {
         if (status == null) {
             throw new IllegalArgumentException("El estado de la denuncia es obligatorio");
         }
+    }
+
+
+    private void validateCanUpdateStatus(ComplaintEntity complaint) {
+
+        if (complaint.getStatus() == ComplaintStatusEnum.REVIEWED) {
+            throw new IllegalArgumentException("No se puede modificar una denuncia que ya fue revisada");
+        }
+    }
+
+
+    private void notifyReviewedComplaint(ComplaintEntity complaint) {
+
+        notificationService.notify(complaint.getEmployee().getAccount().getEmail(),
+                """
+                        Buen dia,
+                        Se ha revisado la denuncia, nos contactaremos a la brevedad.
+                        
+                        Muchas gracias.
+                        """);
     }
 
 

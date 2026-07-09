@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Complaint;
 
+import com.HiveGroup.HiveRH.Common.Utils.Enums.ComplaintStatusEnum;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,4 +36,15 @@ public class ComplaintEntity {
     @ManyToOne
     @JoinColumn(name = "id_employee", nullable = false)
     private EmployeeEntity employee;
+
+    @PrePersist
+    private void prePersist() {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+
+        if (status == null) {
+            status = ComplaintStatusEnum.PENDING;
+        }
+    }
 }

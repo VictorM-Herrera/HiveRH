@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/variations")
 @RequiredArgsConstructor
-@Tag(name = "Variations", description = "Conceptos salariales que suman o descuentan en liquidaciones.")
+@Tag(name = "07 Variations", description = "Conceptos salariales que suman o descuentan en liquidaciones.")
 public class VariationController {
 
     private final VariationService variationService;
@@ -29,7 +30,7 @@ public class VariationController {
 
     @GetMapping
     @Operation(summary = "Listar variaciones", description = "Lista variaciones salariales y permite aplicar filtros disponibles.")
-    public ResponseEntity<List<VariationResponse>> getVariations(VariationFilterDTO filters) {
+    public ResponseEntity<List<VariationResponse>> getVariations(@ParameterObject VariationFilterDTO filters) {
         return ResponseEntity.ok(variationService.findAllByFilter(filters));
     }
 

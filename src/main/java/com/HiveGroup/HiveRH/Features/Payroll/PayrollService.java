@@ -71,7 +71,7 @@ public class PayrollService {
         return payrollMapper.toResponseList(payrolls);
     }
 
-    public PageResponseDTO<PayrollResponse> getAllPages(Pageable pageable){
+    public PageResponseDTO<PayrollResponse> getAllPage(Pageable pageable){
         Page<PayrollEntity> page = payrollRepository.findAll(pageable);
 
         return new PageResponseDTO<>(
@@ -173,16 +173,6 @@ public class PayrollService {
             throw new IllegalArgumentException("La fecha de liquidación es obligatoria");
         }
     }
-
-    // Buscar empleado
-//    private EmployeeEntity findEmployeeById(Long idEmployee) {
-//
-//        return employeeRepository.findById(idEmployee)
-//                .orElseThrow(() -> new EntityNotFoundException(
-//                        "Empleado no encontrado",
-//                        "Employee"
-//                ));
-//    }
 
     // Validar si el empleado puede recibir liquidación
     private void validateEmployeeCanReceivePayroll(EmployeeEntity employee, LocalDate payrollDate) {

@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Vacation;
 
+import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
 import com.HiveGroup.HiveRH.Common.Security.Config.SecurityAuthorizationService;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
@@ -12,7 +13,9 @@ import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -70,7 +73,7 @@ public class VacationService {
 
     // Listar vacaciones con filtros
     @Transactional(readOnly = true)
-    public List<VacationResponse> findAllByFilter(VacationFilterDTO filters) {
+    public PageResponseDTO<VacationResponse> findAllByFilter(VacationFilterDTO filters, Pageable pageable) {
 
         VacationFilterDTO activeFilters = filters != null
                 ? filters
@@ -78,14 +81,16 @@ public class VacationService {
 
         validateFilterDateRange(activeFilters);
 
-        return vacationRepository.findAll()
+        List<VacationResponse> filteredVacations = vacationRepository.findAll()
                 .stream()
-                .filter(vacation -> filterById(vacation, activeFilters.idVacation()))
                 .filter(vacation -> filterByAccepted(vacation, activeFilters.accepted()))
                 .filter(vacation -> filterByDateRange(vacation, activeFilters))
+                .filter(vacation -> filterByEmployeeDni(vacation, activeFilters.dniEmployee()))
                 .filter(vacation -> filterByEmployeeFullName(vacation, activeFilters.fullName()))
                 .map(vacationMapper::toResponse)
                 .toList();
+
+        return toPageResponse(filteredVacations, pageable);
     }
 
     // Actualizar vacaciones
@@ -205,6 +210,11 @@ public class VacationService {
         if (requestDate != null && requestDate.isAfter(startDate)) {
             throw new IllegalArgumentException("La fecha de solicitud no puede ser posterior al inicio de las vacaciones");
         }
+
+        LocalDate effectiveRequestDate = requestDate != null ? requestDate : LocalDate.now();
+        if (countBusinessDaysBetween(effectiveRequestDate, startDate) < 5) {
+            throw new IllegalArgumentException("Las vacaciones deben solicitarse con al menos 5 días hábiles de anticipación");
+        }
     }
 
     // Evitar vacaciones superpuestas
@@ -252,11 +262,6 @@ public class VacationService {
         }
     }
 
-    private boolean filterById(VacationEntity vacation, Long idVacation) {
-
-        return idVacation == null || vacation.getId_vacation().equals(idVacation);
-    }
-
     private boolean filterByAccepted(VacationEntity vacation, Boolean accepted) {
 
         return accepted == null || vacation.isAccepted() == accepted;
@@ -274,12 +279,63 @@ public class VacationService {
         return startsBeforeFilterEnd && endsAfterFilterStart;
     }
 
+    private boolean filterByEmployeeDni(VacationEntity vacation, String dniEmployee) {
+
+        return dniEmployee == null || dniEmployee.isBlank() || vacation.getEmployee().getDni().equals(dniEmployee);
+    }
+
     private boolean filterByEmployeeFullName(VacationEntity vacation, String fullName) {
 
         return TextSearchUtils.matchesFullName(
                 vacation.getEmployee().getName(),
                 vacation.getEmployee().getLastName(),
                 fullName
+        );
+    }
+
+    private int countBusinessDaysBetween(LocalDate fromExclusive, LocalDate toInclusive) {
+        int businessDays = 0;
+        LocalDate date = fromExclusive.plusDays(1);
+
+        while (!date.isAfter(toInclusive)) {
+            if (date.getDayOfWeek() != DayOfWeek.SATURDAY
+                    && date.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                businessDays++;
+            }
+
+            date = date.plusDays(1);
+        }
+
+        return businessDays;
+    }
+
+    private PageResponseDTO<VacationResponse> toPageResponse(List<VacationResponse> vacations, Pageable pageable) {
+        if (pageable == null || pageable.isUnpaged()) {
+            return new PageResponseDTO<>(
+                    vacations,
+                    0,
+                    vacations.size(),
+                    vacations.size(),
+                    vacations.isEmpty() ? 0 : 1
+            );
+        }
+
+        int page = pageable.getPageNumber();
+        int size = pageable.getPageSize();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + size, vacations.size());
+        List<VacationResponse> content = start >= vacations.size()
+                ? List.of()
+                : vacations.subList(start, end);
+
+        int totalPages = (int) Math.ceil((double) vacations.size() / size);
+
+        return new PageResponseDTO<>(
+                content,
+                page,
+                size,
+                vacations.size(),
+                totalPages
         );
     }
 }
