@@ -6,7 +6,6 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,14 +36,11 @@ public class OpenApiConfiguration {
                                 
                                 2. Iniciar la aplicacion con las variables de entorno configuradas.
                                 
-                                3. Si es una demo desde cero, activar el admin inicial con
-                                   `BOOTSTRAP_ADMIN_ENABLED=true` y `BOOTSTRAP_ADMIN_PASSWORD=admin123`.
-                                   
-                                4. Ejecutar `POST /api/auth/login`.
+                                3. Ejecutar `POST /api/auth/login` con una cuenta existente.
                                 
-                                5. Copiar el campo `token` de la respuesta.
+                                4. Copiar el campo `token` de la respuesta.
                                 
-                                6. Presionar `Authorize`, pegar solo el JWT y confirmar.
+                                5. Presionar `Authorize`, pegar solo el JWT y confirmar.
 
                                 ### Roles disponibles
 
@@ -63,11 +59,6 @@ public class OpenApiConfiguration {
                         .version("v1")
                         .contact(new Contact()
                                 .name("HiveRH Team")))
-                .servers(List.of(
-                        new Server()
-                                .url("http://localhost:8080")
-                                .description("Servidor local de desarrollo")
-                ))
                 .tags(List.of(
                         new Tag().name("01 Auth").description("Autenticacion y registro de cuentas para obtener acceso al sistema."),
                         new Tag().name("02 Accounts").description("Operacion sobre la cuenta autenticada y administracion de roles."),
