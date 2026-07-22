@@ -23,7 +23,6 @@ This README is a quick guide to run and understand the project. For the complete
 - MySQL running locally or on an accessible server.
 - Maven Wrapper included in the repository (`mvnw.cmd` / `mvnw`), or Maven installed.
 - Environment variables configured in the environment used to run the application.
-- Docker and Docker Compose, optional for running the API and MySQL with a single command.
 
 ## Configuration
 
@@ -38,10 +37,6 @@ The application reads its configuration from `src/main/resources/application.yam
 | `EMAIL_PASSWORD` | SMTP application password | `abcd efgh ijkl mnop` |
 | `SECRET` | Secret key used to sign JWT tokens | `super-secret-key-at-least-32-bytes` |
 | `EXPIRATION` | Token duration in milliseconds | `86400000` |
-| `BOOTSTRAP_ADMIN_ENABLED` | Creates an initial admin account on startup | `true` |
-| `BOOTSTRAP_ADMIN_USER` | Initial admin username | `admin` |
-| `BOOTSTRAP_ADMIN_EMAIL` | Initial admin email | `admin@hiverh.local` |
-| `BOOTSTRAP_ADMIN_PASSWORD` | Initial admin password, required when bootstrap is enabled | `admin123` |
 
 Example:
 
@@ -53,10 +48,6 @@ EMAIL_ADDRESS=hiverh.notifications@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=super-secret-key-at-least-32-bytes
 EXPIRATION=86400000
-BOOTSTRAP_ADMIN_ENABLED=true
-BOOTSTRAP_ADMIN_USER=admin
-BOOTSTRAP_ADMIN_EMAIL=admin@hiverh.local
-BOOTSTRAP_ADMIN_PASSWORD=admin123
 ```
 
 For Gmail, use an application password instead of the personal account password.
@@ -81,14 +72,7 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 
 Hibernate is configured with `ddl-auto: update`, so it can create or update tables inside that database, but it does not create the MySQL database itself.
 
-For a fresh local demo, the initial admin bootstrap can be enabled with:
-
-```properties
-BOOTSTRAP_ADMIN_ENABLED=true
-BOOTSTRAP_ADMIN_PASSWORD=admin123
-```
-
-When the application starts, it creates an `ADMIN` account if no account exists with the same username or email. This mechanism is intended for demo and development environments only; it is not recommended for production.
+The application expects at least one admin account to already exist in the database used for testing.
 
 ## Local Run
 
@@ -109,29 +93,6 @@ On Windows:
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
-
-## Docker Run
-
-The repository includes `Dockerfile` and `docker-compose.yml` to run MySQL and the API in a local/demo environment:
-
-```bash
-docker compose up --build
-```
-
-Services:
-
-- API: `http://localhost:8080`
-- MySQL: `localhost:3307`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-
-The Compose setup creates a demo `ADMIN` account:
-
-```text
-User: admin
-Password: admin123
-```
-
-This setup is intended for development and portfolio demos. Do not use these credentials in production.
 
 ## Authentication
 
@@ -163,10 +124,10 @@ Swagger is exposed to make testing and contract review easier. Swagger does not 
 Recommended Swagger testing flow:
 
 1. Start MySQL and create the `hiverh` database.
-2. Configure the environment variables, including the admin bootstrap if a quick demo is needed.
+2. Configure the environment variables.
 3. Run the application.
 4. Open `http://localhost:8080/swagger-ui.html`.
-5. Execute `POST /api/auth/login` with the admin user.
+5. Execute `POST /api/auth/login` with an existing account.
 6. Copy the token from the response.
 7. Press `Authorize` and paste only the JWT token.
 

@@ -23,7 +23,6 @@ Este README queda como guia rapida para levantar y entender el proyecto. Para el
 - MySQL corriendo localmente o en un servidor accesible.
 - Maven Wrapper incluido en el repositorio (`mvnw.cmd` / `mvnw`), o Maven instalado.
 - Variables de entorno configuradas en el entorno de ejecucion elegido.
-- Docker y Docker Compose, opcional para levantar API + MySQL con un solo comando.
 
 ## Configuracion
 
@@ -38,10 +37,6 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
 | `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
-| `BOOTSTRAP_ADMIN_ENABLED` | Crea un admin inicial al levantar la app | `true` |
-| `BOOTSTRAP_ADMIN_USER` | Usuario del admin inicial | `admin` |
-| `BOOTSTRAP_ADMIN_EMAIL` | Email del admin inicial | `admin@hiverh.local` |
-| `BOOTSTRAP_ADMIN_PASSWORD` | Password del admin inicial, obligatoria si el bootstrap esta activo | `admin123` |
 
 Ejemplo:
 
@@ -53,10 +48,6 @@ EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
 EXPIRATION=86400000
-BOOTSTRAP_ADMIN_ENABLED=true
-BOOTSTRAP_ADMIN_USER=admin
-BOOTSTRAP_ADMIN_EMAIL=admin@hiverh.local
-BOOTSTRAP_ADMIN_PASSWORD=admin123
 ```
 
 Para Gmail se recomienda usar una password de aplicacion, no la password personal de la cuenta.
@@ -81,14 +72,7 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 
 Hibernate esta configurado con `ddl-auto: update`, por lo que puede crear o actualizar tablas dentro de esa base, pero no crea la base de datos MySQL desde cero.
 
-Para una prueba local desde cero se puede activar el bootstrap de admin con:
-
-```properties
-BOOTSTRAP_ADMIN_ENABLED=true
-BOOTSTRAP_ADMIN_PASSWORD=admin123
-```
-
-Al iniciar la aplicacion se crea una cuenta `ADMIN` si todavia no existe una cuenta con el mismo usuario o email. Este mecanismo esta pensado para demo/desarrollo; no se recomienda activarlo en produccion.
+La aplicacion espera que exista al menos una cuenta administradora en la base usada para probar el sistema.
 
 ## Ejecucion local
 
@@ -109,29 +93,6 @@ En Windows:
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
-
-## Ejecucion con Docker
-
-El repositorio incluye `Dockerfile` y `docker-compose.yml` para levantar MySQL y la API en entorno local/demo:
-
-```bash
-docker compose up --build
-```
-
-Servicios:
-
-- API: `http://localhost:8080`
-- MySQL: `localhost:3307`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-
-El Compose crea una cuenta demo `ADMIN`:
-
-```text
-Usuario: admin
-Password: admin123
-```
-
-Este entorno esta pensado para desarrollo y portfolio. No usar esas credenciales en produccion.
 
 ## Autenticacion
 
@@ -163,10 +124,10 @@ Swagger esta liberado para facilitar pruebas y revision de contratos. Swagger no
 Flujo recomendado para probar desde Swagger:
 
 1. Levantar MySQL y crear la base `hiverh`.
-2. Configurar las variables de entorno, incluyendo el admin bootstrap si se quiere una demo rapida.
+2. Configurar las variables de entorno.
 3. Ejecutar la aplicacion.
 4. Entrar a `http://localhost:8080/swagger-ui.html`.
-5. Ejecutar `POST /api/auth/login` con el usuario admin.
+5. Ejecutar `POST /api/auth/login` con una cuenta existente.
 6. Copiar el token de la respuesta.
 7. Presionar `Authorize` y pegar solo el token JWT.
 
