@@ -29,24 +29,24 @@ import java.util.List;
 @RequestMapping("/api/departments")
 @AllArgsConstructor
 @Validated
-@Tag(name = "04 Departments", description = "Administracion de departamentos internos.")
+@Tag(name = "04 Departments", description = "Internal department management.")
 public class DepartmentController {
     private final DepartmentService departmentService;
 
     @GetMapping
-    @Operation(summary = "Listar departamentos", description = "Obtiene departamentos y permite filtrar por ID, nombre y estado activo.")
+    @Operation(summary = "List departments", description = "Returns departments and supports filtering by ID, name, and active status.")
     public ResponseEntity<List<DepartmentResponseDTO>> getDepartments(@ParameterObject @Valid DepartmentFilterDTO filters) {
         return ResponseEntity.ok(departmentService.findAllByFilter(filters));
     }
 
     @PostMapping
-    @Operation(summary = "Crear departamento", description = "Registra un nuevo departamento interno de la empresa.")
+    @Operation(summary = "Create department", description = "Registers a new internal company department.")
     public ResponseEntity<DepartmentResponseDTO> createDepartment(@Valid @RequestBody DepartmentRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(departmentService.create(request));
     }
 
     @PutMapping("/{id_department}")
-    @Operation(summary = "Actualizar departamento", description = "Actualiza los datos principales de un departamento.")
+    @Operation(summary = "Update department", description = "Updates the main data of an existing department.")
     public ResponseEntity<DepartmentResponseDTO> updateDepartment(
             @NonNull @PathVariable("id_department") @Positive(message = "El ID del departamento debe ser mayor que cero") Long idDepartment,
             @Valid @RequestBody DepartmentRequestDTO request) {
@@ -54,7 +54,7 @@ public class DepartmentController {
     }
 
     @PatchMapping("/{id_department}/status")
-    @Operation(summary = "Cambiar estado de departamento", description = "Activa o desactiva un departamento mediante baja o alta logica.")
+    @Operation(summary = "Update department status", description = "Activates or deactivates a department using logical status changes.")
     public ResponseEntity<DepartmentResponseDTO> updateDepartmentStatus(
             @NonNull @PathVariable("id_department") @Positive(message = "El ID del departamento debe ser mayor que cero") Long idDepartment,
             @Valid @RequestBody DepartmentStatusRequestDTO request) {

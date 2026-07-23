@@ -37,6 +37,12 @@ The application reads its configuration from `src/main/resources/application.yam
 | `EMAIL_PASSWORD` | SMTP application password | `abcd efgh ijkl mnop` |
 | `SECRET` | Secret key used to sign JWT tokens | `super-secret-key-at-least-32-bytes` |
 | `EXPIRATION` | Token duration in milliseconds | `86400000` |
+| `DEMO_CLEANUP_ENABLED` | Enables automatic demo data cleanup | `false` |
+| `DEMO_CLEANUP_DAILY_CRON` | Daily cleanup cron expression | `0 0 4 * * *` |
+| `DEMO_CLEANUP_ZONE` | Cron time zone | `UTC` |
+| `DEMO_CLEANUP_MAX_RECORDS` | Maximum record count before cleanup runs | `5000` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Also deletes branches, departments, positions, and variations | `true` |
+| `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Comma-separated users that are never deleted | `admin` |
 
 Example:
 
@@ -48,6 +54,12 @@ EMAIL_ADDRESS=hiverh.notifications@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=super-secret-key-at-least-32-bytes
 EXPIRATION=86400000
+DEMO_CLEANUP_ENABLED=false
+DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
+DEMO_CLEANUP_ZONE=UTC
+DEMO_CLEANUP_MAX_RECORDS=5000
+DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true
+DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS=admin
 ```
 
 For Gmail, use an application password instead of the personal account password.
@@ -73,6 +85,21 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 Hibernate is configured with `ddl-auto: update`, so it can create or update tables inside that database, but it does not create the MySQL database itself.
 
 The application expects at least one admin account to already exist in the database used for testing.
+
+## Demo Cleanup
+
+Public demo environments can enable automatic data cleanup. The job deletes operational records and, when `DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true`, also deletes catalog data created from Swagger. Users listed in `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` are never deleted.
+
+For Railway, configure it with environment variables, for example:
+
+```properties
+DEMO_CLEANUP_ENABLED=true
+DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
+DEMO_CLEANUP_ZONE=UTC
+DEMO_CLEANUP_MAX_RECORDS=1000
+DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true
+DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS=admin
+```
 
 ## Local Run
 

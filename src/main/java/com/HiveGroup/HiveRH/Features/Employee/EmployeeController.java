@@ -30,26 +30,26 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/employees")
 @AllArgsConstructor
-@Tag(name = "06 Employees", description = "Gestion de empleados, perfiles y bajas logicas.")
+@Tag(name = "06 Employees", description = "Employee records, profiles, and status management.")
 public class EmployeeController {
     private final EmployeeService employeeService;
 
     @GetMapping("/me")
-    @Operation(summary = "Consultar mi empleado", description = "Devuelve el empleado asociado a la cuenta autenticada.")
+    @Operation(summary = "Get my employee profile", description = "Returns the employee profile associated with the authenticated account.")
     public ResponseEntity<EmployeeResponseDTO> getCurrentEmployee() {
         return ResponseEntity.ok(employeeService.findCurrentEmployee());
     }
 
     @GetMapping("/{dni}")
     @PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dni)")
-    @Operation(summary = "Consultar empleado por DNI", description = "Obtiene el detalle de un empleado especifico. La autorizacion valida si el usuario puede acceder a ese empleado.")
+    @Operation(summary = "Get employee by DNI", description = "Returns the details of a specific employee. Authorization validates whether the user can access that employee.")
     public ResponseEntity<EmployeeResponseDTO> getEmployeeByDni(@P("dni") @NonNull @PathVariable String dni) {
         EmployeeResponseDTO employee = employeeService.findByDni(dni);
         return ResponseEntity.ok(employee);
     }
 
     @GetMapping
-    @Operation(summary = "Listar empleados", description = "Lista empleados en formato paginado y permite filtrar por datos personales, sucursal, fechas, estado, puesto, departamento o rango salarial.")
+    @Operation(summary = "List employees", description = "Returns paginated employees and supports filtering by personal data, branch, dates, status, position, department, or salary range.")
     public ResponseEntity<PageResponseDTO<EmployeeResponseDTO>> getEmployees(
             @ParameterObject EmployeeFilterDTO filters,
             @ParameterObject Pageable pageable) {
@@ -57,25 +57,25 @@ public class EmployeeController {
     }
 
     @PostMapping
-    @Operation(summary = "Crear empleado", description = "Registra un empleado activo y crea automaticamente una cuenta EMPLOYEE asociada con credenciales iniciales.")
+    @Operation(summary = "Create employee", description = "Registers an active employee and automatically creates a linked EMPLOYEE account with initial credentials.")
     public ResponseEntity<EmployeeResponseDTO> createEmployee(@Valid @RequestBody EmployeeCreateDTO employeeCreateDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(employeeCreateDTO));
     }
 
     @PatchMapping("/{dni}")
-    @Operation(summary = "Actualizar empleado parcialmente", description = "Modifica solo los campos enviados en el request.")
+    @Operation(summary = "Partially update employee", description = "Updates only the fields provided in the request.")
     public ResponseEntity<EmployeeResponseDTO> patchEmployee(@PathVariable String dni, @Valid @RequestBody EmployeePatchDTO employeePatchDTO) {
         return ResponseEntity.ok(employeeService.patchByDni(dni, employeePatchDTO));
     }
 
     @PutMapping("/{dni}")
-    @Operation(summary = "Actualizar empleado", description = "Actualiza datos del empleado.")
+    @Operation(summary = "Update employee", description = "Updates employee data.")
     public ResponseEntity<EmployeeResponseDTO> putEmployee(@NonNull @PathVariable String dni, @Valid @RequestBody EmployeeUpdateDTO employeeUpdateDTO) {
         return ResponseEntity.ok(employeeService.putByDni(dni, employeeUpdateDTO));
     }
 
     @DeleteMapping("/{dni}")
-    @Operation(summary = "Dar de baja empleado", description = "Realiza una baja logica del empleado por DNI, cambiando su estado a TERMINATED.")
+    @Operation(summary = "Terminate employee", description = "Soft-deletes the employee by DNI, changing their status to TERMINATED.")
     public ResponseEntity<EmployeeResponseDTO> deleteEmployee(@NonNull @PathVariable String dni) {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
     }

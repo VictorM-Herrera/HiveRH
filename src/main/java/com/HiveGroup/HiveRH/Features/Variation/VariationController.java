@@ -17,25 +17,25 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/variations")
 @RequiredArgsConstructor
-@Tag(name = "07 Variations", description = "Conceptos salariales que suman o descuentan en liquidaciones.")
+@Tag(name = "07 Variations", description = "Salary concepts that add to or subtract from payrolls.")
 public class VariationController {
 
     private final VariationService variationService;
 
     @GetMapping("/{id}")
-    @Operation(summary = "Consultar variacion", description = "Obtiene una variacion salarial por ID.")
+    @Operation(summary = "Get variation", description = "Returns a salary variation by ID.")
     public ResponseEntity<VariationResponse> getVariationById(@PathVariable Long id) {
         return ResponseEntity.ok(variationService.findById(id));
     }
 
     @GetMapping
-    @Operation(summary = "Listar variaciones", description = "Lista variaciones salariales y permite aplicar filtros disponibles.")
+    @Operation(summary = "List variations", description = "Returns salary variations and supports the available filters.")
     public ResponseEntity<List<VariationResponse>> getVariations(@ParameterObject VariationFilterDTO filters) {
         return ResponseEntity.ok(variationService.findAllByFilter(filters));
     }
 
     @PostMapping
-    @Operation(summary = "Crear variacion", description = "Crea un concepto salarial. Un total positivo suma al sueldo y un total negativo descuenta.")
+    @Operation(summary = "Create variation", description = "Creates a salary concept. A positive total increases payroll and a negative total deducts from it.")
     public ResponseEntity<VariationResponse> createVariation(
             @Valid @RequestBody VariationRequest request
     ) {
@@ -45,7 +45,7 @@ public class VariationController {
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Actualizar variacion parcialmente", description = "Modifica solo los campos enviados de una variacion salarial.")
+    @Operation(summary = "Partially update variation", description = "Updates only the provided fields of a salary variation.")
     public ResponseEntity<VariationResponse> patchVariation(
             @PathVariable Long id,
             @RequestBody VariationRequest request
@@ -54,7 +54,7 @@ public class VariationController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Reemplazar variacion", description = "Actualiza los datos principales de una variacion salarial existente.")
+    @Operation(summary = "Replace variation", description = "Updates the main data of an existing salary variation.")
     public ResponseEntity<VariationResponse> putVariation(
             @PathVariable Long id,
             @Valid @RequestBody VariationRequest request
@@ -63,7 +63,7 @@ public class VariationController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar variacion", description = "Elimina una variacion salarial.")
+    @Operation(summary = "Delete variation", description = "Deletes a salary variation.")
     public ResponseEntity<VariationResponse> deleteVariation(@PathVariable Long id) {
         return ResponseEntity.ok(variationService.deleteById(id));
     }

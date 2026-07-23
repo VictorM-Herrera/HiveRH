@@ -13,7 +13,7 @@ public record AuthRequest(
                 max = 100,
                 message = "El usuario o email no puede superar los 100 caracteres"
         )
-        @Schema(description = "Usuario o email de la cuenta", example = "admin")
+        @Schema(description = "Account username or email.", example = "admin")
         String identifier,
 
         @NotBlank(message = "La contraseña es obligatoria")
@@ -21,7 +21,7 @@ public record AuthRequest(
                 max = 72,
                 message = "La contraseña no puede superar los 72 caracteres"
         )
-        @Schema(description = "Password de la cuenta", example = "admin123")
+        @Schema(description = "Account password.", example = "123")
         String password
 ) {
 }

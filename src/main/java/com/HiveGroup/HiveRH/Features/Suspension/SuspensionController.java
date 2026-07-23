@@ -21,18 +21,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/suspensions")
 @AllArgsConstructor
-@Tag(name = "13 Suspensions", description = "Suspensiones de empleados y cambio de estado asociado.")
+@Tag(name = "13 Suspensions", description = "Employee suspensions and related status changes.")
 public class SuspensionController {
     private final SuspensionService suspensionService;
 
     @GetMapping
-    @Operation(summary = "Listar suspensiones", description = "Lista suspensiones y permite aplicar filtros disponibles.")
+    @Operation(summary = "List suspensions", description = "Returns suspensions and supports the available filters.")
     public ResponseEntity<List<SuspensionResponseDTO>> getSuspensions(@ParameterObject @Valid SuspensionFilterDTO filters) {
         return ResponseEntity.ok(suspensionService.findAllByFilter(filters));
     }
 
     @PostMapping
-    @Operation(summary = "Registrar suspension", description = "Registra una suspension para un empleado y cambia automaticamente su estado a SUSPENDED.")
+    @Operation(summary = "Create suspension", description = "Registers a suspension for an employee and automatically changes their status to SUSPENDED.")
     public ResponseEntity<SuspensionResponseDTO> createSuspension(@Valid @RequestBody SuspensionRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(suspensionService.create(request));
     }

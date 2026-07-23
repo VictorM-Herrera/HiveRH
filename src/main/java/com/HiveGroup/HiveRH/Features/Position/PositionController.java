@@ -29,24 +29,24 @@ import java.util.List;
 @RequestMapping("/api/positions")
 @AllArgsConstructor
 @Validated
-@Tag(name = "05 Positions", description = "Administracion de puestos de trabajo.")
+@Tag(name = "05 Positions", description = "Job position management.")
 public class PositionController {
     private final PositionService positionService;
 
     @GetMapping
-    @Operation(summary = "Listar puestos", description = "Obtiene puestos de trabajo y permite filtrar por departamento, nombre y estado activo.")
+    @Operation(summary = "List positions", description = "Returns job positions and supports filtering by department, name, and active status.")
     public ResponseEntity<List<PositionResponseDTO>> getPositions(@ParameterObject @Valid PositionFilterDTO filters) {
         return ResponseEntity.ok(positionService.findAllByFilter(filters));
     }
 
     @PostMapping
-    @Operation(summary = "Crear puesto", description = "Registra un nuevo puesto de trabajo.")
+    @Operation(summary = "Create position", description = "Registers a new job position.")
     public ResponseEntity<PositionResponseDTO> createPosition(@Valid @RequestBody PositionRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(positionService.create(request));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar puesto", description = "Actualiza los datos principales de un puesto de trabajo.")
+    @Operation(summary = "Update position", description = "Updates the main data of an existing job position.")
     public ResponseEntity<PositionResponseDTO> updatePosition(
             @NonNull @PathVariable @Positive(message = "El ID del puesto debe ser mayor que cero") Long id,
             @Valid @RequestBody PositionRequestDTO request) {
@@ -54,7 +54,7 @@ public class PositionController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Cambiar estado de puesto", description = "Activa o desactiva un puesto de trabajo mediante baja o alta logica.")
+    @Operation(summary = "Update position status", description = "Activates or deactivates a job position using logical status changes.")
     public ResponseEntity<PositionResponseDTO> updatePositionStatus(
             @NonNull @PathVariable @Positive(message = "El ID del puesto debe ser mayor que cero") Long id,
             @Valid @RequestBody PositionStatusRequestDTO request) {

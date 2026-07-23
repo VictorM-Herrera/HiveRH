@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/vacations")
 @RequiredArgsConstructor
-@Tag(name = "09 Vacations", description = "Solicitudes y registros de vacaciones.")
+@Tag(name = "09 Vacations", description = "Vacation requests and records.")
 public class VacationController {
 
     private final VacationService vacationService;
 
     @GetMapping
-    @Operation(summary = "Listar vacaciones", description = "Lista vacaciones en formato paginado y permite filtrar por estado de aceptacion, rango de fechas, DNI y nombre completo.")
+    @Operation(summary = "List vacations", description = "Returns paginated vacations and supports filtering by approval status, date range, DNI, and full name.")
     public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(
             @ParameterObject VacationFilterDTO filters,
             @ParameterObject Pageable pageable) {
@@ -37,7 +37,7 @@ public class VacationController {
 
     @PostMapping
     @PreAuthorize("@securityAuthorizationService.canCreateVacationForEmployeeDni(#request.dniEmployee())")
-    @Operation(summary = "Registrar vacaciones", description = "Registra vacaciones para un empleado activo. Valida fechas y evita superposiciones para el mismo empleado.")
+    @Operation(summary = "Create vacation", description = "Registers vacation days for an active employee. Validates dates and prevents overlapping vacations for the same employee.")
     public ResponseEntity<VacationResponse> create(@P("request") @Valid @RequestBody VacationRequest request) {
 
         VacationResponse response = vacationService.create(request);
@@ -46,7 +46,7 @@ public class VacationController {
     }
 
     @PutMapping("/{id_vacation}")
-    @Operation(summary = "Actualizar vacaciones", description = "Actualiza un registro de vacaciones existente.")
+    @Operation(summary = "Update vacation", description = "Updates an existing vacation record.")
     public ResponseEntity<VacationResponse> updateById(
             @PathVariable("id_vacation") Long idVacation,
             @Valid @RequestBody VacationRequest request
@@ -59,7 +59,7 @@ public class VacationController {
 
     @DeleteMapping("/{id_vacation}")
     @PreAuthorize("@securityAuthorizationService.canDeleteVacation(#idVacation)")
-    @Operation(summary = "Eliminar vacaciones", description = "Elimina el registro indicado. La autorizacion valida si el usuario puede eliminar esa solicitud.")
+    @Operation(summary = "Delete vacation", description = "Deletes the selected vacation record. Authorization validates whether the user can delete that request.")
     public ResponseEntity<VacationResponse> deleteById(
             @P("idVacation") @PathVariable("id_vacation") Long idVacation
     ) {

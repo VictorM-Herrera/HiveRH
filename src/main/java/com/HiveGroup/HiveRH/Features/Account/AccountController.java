@@ -21,12 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/accounts")
 @AllArgsConstructor
 @Validated
-@Tag(name = "02 Accounts", description = "Operacion sobre la cuenta autenticada y administracion de roles.")
+@Tag(name = "02 Accounts", description = "Authenticated account operations and role management.")
 public class AccountController {
     private final AccountService accountService;
 
     @PatchMapping("/{email}/role")
-    @Operation(summary = "Cambiar rol de cuenta", description = "Permite modificar el rol de una cuenta existente. Se utiliza para administrar permisos de acceso dentro del sistema.")
+    @Operation(summary = "Update account role", description = "Changes the role of an existing account. Used to manage access permissions across the system.")
     public ResponseEntity<ResponseAccountDTO> updateRole(
             @PathVariable String email,
             @Valid @RequestBody UpdateAccountRoleDTO request) {
@@ -34,7 +34,7 @@ public class AccountController {
     }
 
     @PatchMapping("/{dni}/rol")
-    @Operation(summary = "Cambiar rol de cuenta", description = "Permite modificar el rol de una cuenta existente. Se utiliza para administrar permisos de acceso dentro del sistema.")
+    @Operation(summary = "Update account role by employee DNI", description = "Changes the role of the account linked to the provided employee DNI.")
     public ResponseEntity<ResponseAccountDTO> updateRoleDNI(
             @PathVariable @Positive(message = "El ID de la cuenta debe ser mayor que cero") String dni,
             @Valid @RequestBody UpdateAccountRoleDTO request) {
@@ -42,13 +42,13 @@ public class AccountController {
     }
 
     @PatchMapping("/me/email")
-    @Operation(summary = "Cambiar email propio", description = "Actualiza el email de la cuenta asociada al token autenticado.")
+    @Operation(summary = "Update my email", description = "Updates the email address of the account associated with the authenticated token.")
     public ResponseEntity<ResponseAccountDTO> updateMyEmail(@Valid @RequestBody UpdateAccountEmailDTO request) {
         return ResponseEntity.ok(accountService.updateCurrentEmail(request.email()));
     }
 
     @PatchMapping("/me/password")
-    @Operation(summary = "Cambiar password propia", description = "Actualiza la password de la cuenta autenticada, validando la password actual antes de guardar la nueva.")
+    @Operation(summary = "Update my password", description = "Updates the authenticated account password after validating the current password.")
     public ResponseEntity<ResponseAccountDTO> updateMyPassword(@Valid @RequestBody UpdateAccountPasswordDTO request) {
         return ResponseEntity.ok(accountService.updateCurrentPassword(
                 request.currentPassword(),

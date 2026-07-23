@@ -22,21 +22,21 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/payrolls")
 @AllArgsConstructor
-@Tag(name = "08 Payrolls", description = "Liquidaciones de sueldo y consultas por empleado.")
+@Tag(name = "08 Payrolls", description = "Payroll records and employee payroll queries.")
 public class PayrollController {
 
     private final PayrollService payrollService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Listar liquidaciones", description = "Lista liquidaciones de sueldo en formato paginado. Requiere rol ADMIN o RRHH.")
+    @Operation(summary = "List payrolls", description = "Returns paginated payroll records. Requires ADMIN or RRHH role.")
     public ResponseEntity<PageResponseDTO<PayrollResponse>> getPayrolls(@ParameterObject Pageable pageable) {
         return ResponseEntity.ok(payrollService.getAllPage(pageable));
     }
 
     @GetMapping("/employee/{dni_employee}")
     @PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dniEmployee)")
-    @Operation(summary = "Listar liquidaciones por empleado", description = "Consulta liquidaciones de un empleado con filtros de fecha. Un empleado solo puede acceder a sus propias liquidaciones.")
+    @Operation(summary = "List payrolls by employee", description = "Returns payroll records for an employee with date filters. Employees can only access their own payrolls.")
     public ResponseEntity<List<PayrollResponse>> getPayrollsByEmployee(
             @P("dniEmployee") @PathVariable("dni_employee") String dniEmployee,
             @ParameterObject PayrollFilterDTO filters
@@ -46,7 +46,7 @@ public class PayrollController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Crear liquidacion", description = "Genera una liquidacion calculando sueldo base mas variaciones. Valida empleado activo, sueldo valido y una unica liquidacion por mes.")
+    @Operation(summary = "Create payroll", description = "Generates a payroll by calculating base salary plus variations. Validates active employee status, salary rules, and one payroll per month.")
     public ResponseEntity<PayrollResponse> createPayroll(
             @Valid @RequestBody PayrollRequest request
     ) {
@@ -57,7 +57,7 @@ public class PayrollController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Actualizar liquidacion", description = "Actualiza una liquidacion existente recalculando datos segun el request enviado.")
+    @Operation(summary = "Update payroll", description = "Updates an existing payroll and recalculates values from the submitted request.")
     public ResponseEntity<PayrollResponse> updatePayroll(
             @NonNull @PathVariable Long id,
             @Valid @RequestBody PayrollRequest request
@@ -67,7 +67,7 @@ public class PayrollController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "Eliminar liquidacion", description = "Elimina una liquidacion y devuelve los datos eliminados.")
+    @Operation(summary = "Delete payroll", description = "Deletes a payroll record and returns the deleted data.")
     public ResponseEntity<PayrollResponse> deletePayroll(@NonNull @PathVariable Long id) {
         return ResponseEntity.ok(payrollService.deleteById(id));
     }

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "01 Auth", description = "Autenticacion y registro de cuentas para obtener acceso al sistema.")
+@Tag(name = "01 Auth", description = "Authentication and account registration.")
 public class AuthController {
     private final AuthService authService;
     private final AccountService accountService;
@@ -26,7 +26,7 @@ public class AuthController {
 
     @PostMapping("/api/auth/login")
     @SecurityRequirements
-    @Operation(summary = "Iniciar sesion", description = "Valida usuario o email junto con la password. Si las credenciales son correctas devuelve un token JWT para consumir endpoints protegidos.")
+    @Operation(summary = "Log in", description = "Validates a username or email and password. Returns a JWT token when the credentials are valid.")
     public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody AuthRequest authRequest) {
         UserDetails user = authService.authenticate(authRequest);
         String token = jwtService.generateToken(user);
@@ -34,8 +34,7 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/register")
-    @SecurityRequirements
-    @Operation(summary = "Registrar cuenta", description = "Crea una cuenta de usuario. La password se almacena encriptada y el rol define los permisos iniciales de acceso.")
+    @Operation(summary = "Register account", description = "Creates a user account. Requires an ADMIN or RRHH token. The password is stored encrypted and the selected role defines the account permissions.")
     public ResponseEntity<ResponseAccountDTO> registerUser(@Valid @RequestBody NewAccountDTO newAccountDTO) {
         return new ResponseEntity<>(accountService.save(newAccountDTO), HttpStatus.CREATED);
     }

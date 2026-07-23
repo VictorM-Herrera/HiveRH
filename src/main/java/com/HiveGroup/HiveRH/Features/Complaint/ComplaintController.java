@@ -20,13 +20,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/complaints")
 @RequiredArgsConstructor
-@Tag(name = "12 Complaints", description = "Denuncias internas y seguimiento de revision.")
+@Tag(name = "12 Complaints", description = "Internal complaints and review tracking.")
 public class ComplaintController {
 
     private final ComplaintService complaintService;
 
     @GetMapping
-    @Operation(summary = "Listar denuncias", description = "Lista denuncias internas y permite filtrar por ID, titulo, estado y rango de fechas.")
+    @Operation(summary = "List complaints", description = "Returns internal complaints and supports filtering by ID, title, status, and date range.")
     public ResponseEntity<List<ComplaintResponse>> findAll(@ParameterObject ComplaintFilterDTO filters) {
 
         List<ComplaintResponse> response = complaintService.findAllByFilter(filters);
@@ -36,7 +36,7 @@ public class ComplaintController {
 
     @PostMapping
     @PreAuthorize("@securityAuthorizationService.canCreateComplaintForEmployeeDni(#request.dni())")
-    @Operation(summary = "Crear denuncia", description = "Registra una denuncia asociada a un empleado activo. Al crearse queda en estado PENDING.")
+    @Operation(summary = "Create complaint", description = "Registers a complaint associated with an active employee. New complaints start with PENDING status.")
     public ResponseEntity<ComplaintResponse> create(
             @P("request") @Valid @RequestBody ComplaintRequest request
     ) {
@@ -45,7 +45,7 @@ public class ComplaintController {
 
 
     @PutMapping("/{id_complaint}")
-    @Operation(summary = "Actualizar estado de denuncia", description = "Actualiza el estado de una denuncia. Una denuncia revisada no puede volver a modificarse.")
+    @Operation(summary = "Update complaint status", description = "Updates a complaint status. Once reviewed, a complaint cannot be changed again.")
     public ResponseEntity<ComplaintResponse> updateStatus(
             @PathVariable("id_complaint") Long idComplaint,
             @Valid @RequestBody ComplaintStatusRequest request

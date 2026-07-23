@@ -23,56 +23,52 @@ public class OpenApiConfiguration {
                 .info(new Info()
                         .title("HiveRH API")
                         .description("""
-                                API REST para gestionar procesos internos de Recursos Humanos: empleados, cuentas,
-                                estructura organizacional, liquidaciones, licencias, vacaciones, suspensiones,
-                                denuncias, certificados y variaciones salariales.
+                                REST API for Human Resources workflows: employees, accounts, roles,
+                                organizational structure, payrolls, licenses, vacations, suspensions,
+                                complaints, certificates, and salary variations.
 
-                                ### Como probar la API
+                                ### How to test this API
 
-                                Swagger ejecuta requests reales contra la aplicacion. Los datos que crees, modifiques
-                                o elimines desde esta pantalla se guardan en la base MySQL configurada en `DB_URL`.
+                                Swagger sends real requests to the deployed application. Any data created,
+                                updated, or deleted from this page is persisted in the connected MySQL database.
 
-                                1. Levantar MySQL y crear la base `hiverh`.
+                                1. Run `POST /api/auth/login` with an existing account.
                                 
-                                2. Iniciar la aplicacion con las variables de entorno configuradas.
+                                2. Copy the `token` value from the response.
                                 
-                                3. Ejecutar `POST /api/auth/login` con una cuenta existente.
-                                
-                                4. Copiar el campo `token` de la respuesta.
-                                
-                                5. Presionar `Authorize`, pegar solo el JWT y confirmar.
+                                3. Click `Authorize`, paste only the JWT token, and confirm.
 
-                                ### Roles disponibles
+                                ### Available roles
 
-                                - `ADMIN`: administra cuentas, roles, sucursales, departamentos, puestos y recursos generales.
+                                - `ADMIN`: manages accounts, roles, branches, departments, positions, and general resources.
                                 
-                                - `RRHH`: gestiona empleados, licencias, vacaciones, suspensiones, denuncias y liquidaciones.
+                                - `RRHH`: manages employees, licenses, vacations, suspensions, complaints, and payrolls.
                                 
-                                - `EMPLOYEE`: consulta y opera sobre recursos propios cuando la regla de negocio lo permite.
+                                - `EMPLOYEE`: reads and manages their own resources when business rules allow it.
 
-                                ### Notas de uso
+                                ### Usage notes
 
-                                - Los endpoints protegidos requieren JWT.
-                                - Los filtros de endpoints GET se envian como query params.
-                                - No es obligatorio completar todos los filtros; se puede enviar uno, varios o ninguno.
+                                - Protected endpoints require a JWT.
+                                - GET filters are sent as query parameters.
+                                - Filters are optional unless an endpoint states otherwise.
                                 """)
                         .version("v1")
                         .contact(new Contact()
                                 .name("HiveRH Team")))
                 .tags(List.of(
-                        new Tag().name("01 Auth").description("Autenticacion y registro de cuentas para obtener acceso al sistema."),
-                        new Tag().name("02 Accounts").description("Operacion sobre la cuenta autenticada y administracion de roles."),
-                        new Tag().name("03 Branches").description("Administracion de sucursales de la empresa."),
-                        new Tag().name("04 Departments").description("Administracion de departamentos internos."),
-                        new Tag().name("05 Positions").description("Administracion de puestos de trabajo."),
-                        new Tag().name("06 Employees").description("Gestion de empleados, perfiles y bajas logicas."),
-                        new Tag().name("07 Variations").description("Conceptos salariales que suman o descuentan en liquidaciones."),
-                        new Tag().name("08 Payrolls").description("Liquidaciones de sueldo y consultas por empleado."),
-                        new Tag().name("09 Vacations").description("Solicitudes y registros de vacaciones."),
-                        new Tag().name("10 Licenses").description("Licencias de empleados y su estado de aprobacion."),
-                        new Tag().name("11 Certificates").description("Carga, consulta y descarga de certificados PDF."),
-                        new Tag().name("12 Complaints").description("Denuncias internas y seguimiento de revision."),
-                        new Tag().name("13 Suspensions").description("Suspensiones de empleados y cambio de estado asociado.")
+                        new Tag().name("01 Auth").description("Authentication and account registration."),
+                        new Tag().name("02 Accounts").description("Authenticated account operations and role management."),
+                        new Tag().name("03 Branches").description("Company branch management."),
+                        new Tag().name("04 Departments").description("Internal department management."),
+                        new Tag().name("05 Positions").description("Job position management."),
+                        new Tag().name("06 Employees").description("Employee records, profiles, and status management."),
+                        new Tag().name("07 Variations").description("Salary concepts that add to or subtract from payrolls."),
+                        new Tag().name("08 Payrolls").description("Payroll records and employee payroll queries."),
+                        new Tag().name("09 Vacations").description("Vacation requests and records."),
+                        new Tag().name("10 Licenses").description("Employee licenses and approval status."),
+                        new Tag().name("11 Certificates").description("PDF certificate upload, lookup, and download."),
+                        new Tag().name("12 Complaints").description("Internal complaints and review tracking."),
+                        new Tag().name("13 Suspensions").description("Employee suspensions and related status changes.")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new Components()
@@ -80,6 +76,6 @@ public class OpenApiConfiguration {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Pegue solo el token JWT obtenido desde POST /api/auth/login. Swagger agrega el prefijo Bearer automaticamente.")));
+                                .description("Paste only the JWT token returned by POST /api/auth/login. Swagger adds the Bearer prefix automatically.")));
     }
 }

@@ -30,12 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/licenses")
 @AllArgsConstructor
 @Validated
-@Tag(name = "10 Licenses", description = "Licencias de empleados y su estado de aprobacion.")
+@Tag(name = "10 Licenses", description = "Employee licenses and approval status.")
 public class LicenseController {
     LicenseService licenseService;
 
     @GetMapping
-    @Operation(summary = "Listar licencias", description = "Lista licencias en formato paginado y permite filtrar por estado, DNI del empleado, rango de fechas y si es paga.")
+    @Operation(summary = "List licenses", description = "Returns paginated licenses and supports filtering by status, employee DNI, date range, and paid status.")
     public ResponseEntity<PageResponseDTO<LicenseDTO>> getLicenses(
             @ParameterObject @Valid LicenseFilterDTO filters,
             @ParameterObject Pageable pageable) {
@@ -46,20 +46,20 @@ public class LicenseController {
 
     @GetMapping("/{id_license}")
     @PreAuthorize("@securityAuthorizationService.canAccessLicense(#id_license)")
-    @Operation(summary = "Consultar licencia", description = "Obtiene una licencia por ID. La autorizacion valida acceso a la licencia solicitada.")
+    @Operation(summary = "Get license", description = "Returns a license by ID. Authorization validates access to the requested license.")
     public ResponseEntity<LicenseDTO> getLicenseByID(
             @P("id_license") @PathVariable @Positive(message = "El ID de la licencia debe ser mayor que cero") Long id_license) {
         return ResponseEntity.ok().body(licenseService.getLicense(id_license));
     }
 
     @PostMapping
-    @Operation(summary = "Crear licencia", description = "Crea una licencia asociada al empleado autenticado y puede vincular certificados existentes.")
+    @Operation(summary = "Create license", description = "Creates a license associated with the authenticated employee and can link existing certificates.")
     public ResponseEntity<LicenseDTO> postLicense(@Valid @RequestBody RequestLicenseDTO license) {
         return ResponseEntity.status(HttpStatus.CREATED).body(licenseService.createLicense(license));
     }
 
     @PatchMapping("/{id_license}")
-    @Operation(summary = "Revisar licencia", description = "Permite a RRHH o ADMIN actualizar el estado y si la licencia es paga.")
+    @Operation(summary = "Review license", description = "Allows RRHH or ADMIN users to update the license status and paid flag.")
     public ResponseEntity<LicenseDTO> reviewLicense(
             @PathVariable("id_license") @Positive(message = "El ID de la licencia debe ser mayor que cero") Long idLicense,
             @Valid @RequestBody LicenseReviewRequestDTO request) {
@@ -68,7 +68,7 @@ public class LicenseController {
 
     @DeleteMapping("/{id_license}")
     @PreAuthorize("@securityAuthorizationService.canDeleteLicense(#id_license)")
-    @Operation(summary = "Eliminar licencia", description = "Elimina una licencia si el usuario autenticado tiene permisos sobre ella.")
+    @Operation(summary = "Delete license", description = "Deletes a license if the authenticated user has permission to access it.")
     public ResponseEntity<Void> deleteLicense(
             @P("id_license") @PathVariable @Positive(message = "El ID de la licencia debe ser mayor que cero") Long id_license) {
         licenseService.deleteLicense(id_license);

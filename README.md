@@ -37,6 +37,12 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
 | `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
+| `DEMO_CLEANUP_ENABLED` | Activa la limpieza automatica de datos demo | `false` |
+| `DEMO_CLEANUP_DAILY_CRON` | Cron diario de limpieza | `0 0 4 * * *` |
+| `DEMO_CLEANUP_ZONE` | Zona horaria del cron | `UTC` |
+| `DEMO_CLEANUP_MAX_RECORDS` | Cantidad maxima de registros antes de limpiar | `5000` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Tambien borra sucursales, departamentos, puestos y variaciones | `true` |
+| `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Usuarios que nunca se borran, separados por coma | `admin` |
 
 Ejemplo:
 
@@ -48,6 +54,12 @@ EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
 EXPIRATION=86400000
+DEMO_CLEANUP_ENABLED=false
+DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
+DEMO_CLEANUP_ZONE=UTC
+DEMO_CLEANUP_MAX_RECORDS=5000
+DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true
+DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS=admin
 ```
 
 Para Gmail se recomienda usar una password de aplicacion, no la password personal de la cuenta.
@@ -73,6 +85,21 @@ CREATE DATABASE IF NOT EXISTS hiverh;
 Hibernate esta configurado con `ddl-auto: update`, por lo que puede crear o actualizar tablas dentro de esa base, pero no crea la base de datos MySQL desde cero.
 
 La aplicacion espera que exista al menos una cuenta administradora en la base usada para probar el sistema.
+
+## Limpieza de demo
+
+Para entornos publicos de prueba se puede activar una limpieza automatica de datos. El job borra datos operativos y, si `DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true`, tambien borra catalogos creados desde Swagger. Los usuarios indicados en `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` no se eliminan.
+
+En Railway se recomienda activarlo con variables de entorno, por ejemplo:
+
+```properties
+DEMO_CLEANUP_ENABLED=true
+DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
+DEMO_CLEANUP_ZONE=UTC
+DEMO_CLEANUP_MAX_RECORDS=1000
+DEMO_CLEANUP_INCLUDE_CATALOG_DATA=true
+DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS=admin
+```
 
 ## Ejecucion local
 

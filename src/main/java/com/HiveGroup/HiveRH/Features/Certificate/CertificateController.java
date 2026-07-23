@@ -26,13 +26,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @AllArgsConstructor
 @Validated
-@Tag(name = "11 Certificates", description = "Carga, consulta y descarga de certificados PDF.")
+@Tag(name = "11 Certificates", description = "PDF certificate upload, lookup, and download.")
 public class CertificateController {
     CertificateService certificateService;
 
     @PostMapping(value = "/api/certificates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@securityAuthorizationService.canAccessLicense(#request.idLicense())")
-    @Operation(summary = "Cargar certificado PDF", description = "Carga un archivo PDF mediante multipart/form-data y lo asocia a una licencia.")
+    @Operation(summary = "Upload PDF certificate", description = "Uploads a PDF file through multipart/form-data and links it to a license.")
     public ResponseEntity<CertificateDTO> createCertificate(
             @P("request") @Valid @ModelAttribute RequestCertificateDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -41,7 +41,7 @@ public class CertificateController {
 
     @GetMapping("/api/certificate/{id_certificate}")
     @PreAuthorize("@securityAuthorizationService.canAccessCertificate(#id_certificate)")
-    @Operation(summary = "Descargar certificado PDF", description = "Devuelve el archivo PDF almacenado para el certificado indicado.")
+    @Operation(summary = "Download PDF certificate", description = "Returns the stored PDF file for the selected certificate.")
     public ResponseEntity<byte[]> loadPDF(
             @P("id_certificate") @PathVariable @NotNull(message = "El ID del certificado es obligatorio") @Positive(message = "El ID del certificado debe ser mayor que cero") Long id_certificate) {
         return ResponseEntity.ok()
@@ -52,7 +52,7 @@ public class CertificateController {
 
     @GetMapping("/api/certificate-info")
     @PreAuthorize("@securityAuthorizationService.canAccessCertificate(#id)")
-    @Operation(summary = "Consultar informacion de certificado", description = "Devuelve metadatos del certificado sin descargar el archivo PDF.")
+    @Operation(summary = "Get certificate info", description = "Returns certificate metadata without downloading the PDF file.")
     public ResponseEntity<ResponseCertificateDTO> getInfo(
             @P("id") @RequestParam @NotNull(message = "El ID del certificado es obligatorio") @Positive(message = "El ID del certificado debe ser mayor que cero") Long id) {
         return ResponseEntity.ok().body(certificateService.getInfoCertificate(id));
@@ -60,7 +60,7 @@ public class CertificateController {
 
     @DeleteMapping("/api/certificate/{id_certificate}")
     @PreAuthorize("@securityAuthorizationService.canAccessCertificate(#id_certificate)")
-    @Operation(summary = "Eliminar certificado", description = "Elimina el certificado indicado si el usuario tiene permisos sobre el recurso.")
+    @Operation(summary = "Delete certificate", description = "Deletes the selected certificate when the user has permission over the resource.")
     public ResponseEntity<Void> deleteCertificate(
             @P("id_certificate") @PathVariable @NotNull(message = "El ID del certificado es obligatorio") @Positive(message = "El ID del certificado debe ser mayor que cero") Long id_certificate) {
         certificateService.deleteCertificate(id_certificate);
