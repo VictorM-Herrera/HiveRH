@@ -2,7 +2,7 @@
 
 HiveRH es un sistema interno de gestión de empleados pensado para empresas que necesitan organizar y administrar su área de Recursos Humanos.
 
-El sistema permite gestionar empleados, cuentas de usuario, roles, sucursales, departamentos, puestos, liquidaciones de sueldo, vacaciones, licencias, certificados, denuncias y suspensiones.
+El sistema permite gestionar empleados, cuentas de usuario, roles, sucursales, departamentos, puestos, liquidaciones de sueldo, vacaciones, licencias y certificados.
 
 ---
 
@@ -13,7 +13,7 @@ El objetivo principal de HiveRH es brindar una herramienta interna para que la e
 El sistema está pensado para que cada tipo de usuario tenga permisos diferentes según su rol:
 
 - **ADMIN**: control total del sistema.
-- **RRHH**: gestión operativa de empleados y solicitudes.
+- **STAFF**: gestión operativa de empleados y solicitudes.
 - **EMPLOYEE**: acceso limitado a su propia información y solicitudes.
 
 De esta forma, el sistema permite separar responsabilidades y proteger la información sensible de la empresa.
@@ -55,11 +55,11 @@ Funciones principales:
 
 ---
 
-### RRHH
+### STAFF
 
-El usuario con rol **RRHH** representa al área de Recursos Humanos.
+El usuario con rol **STAFF** representa al personal del área de Recursos Humanos.
 
-Tiene permisos para gestionar empleados, revisar solicitudes, administrar licencias, vacaciones, denuncias y suspensiones.
+Tiene permisos para gestionar empleados, revisar solicitudes, administrar licencias y vacaciones.
 
 Funciones principales:
 
@@ -69,8 +69,6 @@ Funciones principales:
 - Consultar listados de empleados.
 - Gestionar vacaciones.
 - Gestionar licencias.
-- Revisar denuncias.
-- Registrar suspensiones.
 - Administrar liquidaciones y variaciones salariales.
 
 ---
@@ -87,18 +85,17 @@ Funciones principales:
 - Ver su historial de sueldos.
 - Solicitar vacaciones.
 - Solicitar licencias.
-- Realizar denuncias.
 - Solicitar traslados internos.
 
 ---
 
-## Funcionalidades para RRHH
+## Funcionalidades para STAFF
 
 El área de Recursos Humanos puede gestionar la información laboral y administrativa de los empleados.
 
 ### Crear empleado
 
-RRHH puede registrar un nuevo empleado cargando sus datos principales:
+STAFF puede registrar un nuevo empleado cargando sus datos principales:
 
 - Nombre.
 - Apellido.
@@ -120,7 +117,7 @@ Al crear un empleado, el sistema lo registra en estado **ACTIVE** y genera una c
 
 ### Dar de baja empleado
 
-RRHH puede dar de baja a un empleado mediante una eliminación lógica.
+STAFF puede dar de baja a un empleado mediante una eliminación lógica.
 
 Esto significa que el empleado no se borra físicamente de la base de datos, sino que su estado cambia de **ACTIVE** a **TERMINATED**.
 
@@ -130,7 +127,7 @@ Este comportamiento permite conservar el historial del empleado dentro del siste
 
 ### Ver lista de empleados
 
-RRHH puede consultar el listado de empleados registrados en la empresa.
+STAFF puede consultar el listado de empleados registrados en la empresa.
 
 El sistema permite aplicar filtros para facilitar la búsqueda:
 
@@ -145,7 +142,7 @@ El sistema permite aplicar filtros para facilitar la búsqueda:
 
 ### Ver información de un empleado
 
-RRHH puede consultar la ficha completa de un empleado.
+STAFF puede consultar la ficha completa de un empleado.
 
 Desde esta sección se puede revisar:
 
@@ -162,7 +159,7 @@ Desde esta sección se puede revisar:
 
 ### Modificar información del empleado
 
-RRHH puede actualizar los datos personales y laborales de un empleado.
+STAFF puede actualizar los datos personales y laborales de un empleado.
 
 Entre los datos modificables se incluyen:
 
@@ -182,7 +179,7 @@ Entre los datos modificables se incluyen:
 
 ### Gestionar sueldos
 
-RRHH puede calcular y asignar las liquidaciones mensuales de los empleados.
+STAFF puede calcular y asignar las liquidaciones mensuales de los empleados.
 
 El sistema utiliza el sueldo base del empleado y permite agregar variaciones salariales.
 
@@ -199,7 +196,7 @@ Una variación positiva suma al sueldo y una variación negativa descuenta del t
 
 ### Gestionar vacaciones
 
-RRHH puede ver y administrar las solicitudes de vacaciones realizadas por los empleados.
+STAFF puede ver y administrar las solicitudes de vacaciones realizadas por los empleados.
 
 El sistema permite:
 
@@ -214,7 +211,7 @@ El sistema permite:
 
 ### Gestionar licencias
 
-RRHH puede revisar las solicitudes de licencia cargadas por los empleados.
+STAFF puede revisar las solicitudes de licencia cargadas por los empleados.
 
 El sistema permite:
 
@@ -225,37 +222,6 @@ El sistema permite:
 - Ver certificados adjuntos.
 - Aceptar licencias.
 - Rechazar licencias.
-
----
-
-### Gestionar denuncias
-
-RRHH puede consultar las denuncias realizadas dentro del sistema.
-
-El sistema permite:
-
-- Ver denuncias pendientes.
-- Ver denuncias revisadas.
-- Filtrar denuncias según su estado.
-- Consultar el contenido de cada denuncia.
-- Marcar denuncias como revisadas.
-
----
-
-### Suspender empleado
-
-RRHH puede registrar una suspensión para un empleado.
-
-Al crear una suspensión, se debe indicar:
-
-- Empleado suspendido.
-- Motivo de la suspensión.
-- Fecha de inicio.
-- Fecha de finalización.
-
-Cuando se registra la suspensión, el estado del empleado cambia automáticamente a **SUSPENDED**.
-
-También se contempla el envío automático de un email informando la suspensión.
 
 ---
 
@@ -289,7 +255,7 @@ Debe cargar:
 - Fecha de inicio.
 - Fecha de finalización.
 
-La solicitud queda pendiente hasta que RRHH la revise.
+La solicitud queda pendiente hasta que STAFF la revise.
 
 ---
 
@@ -299,7 +265,7 @@ El empleado puede solicitar una licencia indicando las fechas correspondientes.
 
 También puede adjuntar certificados cuando sea necesario.
 
-La solicitud queda pendiente de aprobación por parte de RRHH.
+La solicitud queda pendiente de aprobación por parte de STAFF.
 
 ---
 
@@ -316,14 +282,6 @@ La solicitud puede estar relacionada con:
 
 ---
 
-### Realizar denuncias
-
-El empleado puede realizar denuncias relacionadas con situaciones internas de la empresa.
-
-Estas denuncias quedan registradas en el sistema para ser revisadas por RRHH.
-
----
-
 ## Alcance general
 
 HiveRH permite administrar las principales tareas del área de Recursos Humanos:
@@ -334,6 +292,4 @@ HiveRH permite administrar las principales tareas del área de Recursos Humanos:
 - Gestión de sueldos, bonos y descuentos.
 - Registro de vacaciones.
 - Registro de licencias y certificados.
-- Gestión de denuncias internas.
-- Registro de suspensiones.
 - Consulta de información personal y laboral por parte del empleado.

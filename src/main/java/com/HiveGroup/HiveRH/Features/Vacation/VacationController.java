@@ -25,7 +25,7 @@ public class VacationController {
     private final VacationService vacationService;
 
     @GetMapping
-    @Operation(summary = "List vacations", description = "Returns paginated vacations and supports filtering by approval status, date range, DNI, and full name.")
+    @Operation(summary = "List vacations", description = "Returns paginated vacations and supports filtering by status, date range, DNI, and full name.")
     public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(
             @ParameterObject VacationFilterDTO filters,
             @ParameterObject Pageable pageable) {

@@ -1,6 +1,6 @@
 package com.HiveGroup.HiveRH.Common.Security.Config;
 
-import com.HiveGroup.HiveRH.Common.Utils.Enums.LicenseStatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AbsenceStatus;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
 import com.HiveGroup.HiveRH.Features.Certificate.CertificateRepository;
@@ -20,7 +20,7 @@ public class SecurityAuthorizationService {
     private final VacationRepository vacationRepository;
 
     public boolean canAccessEmployee(Long employeeId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -31,7 +31,7 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canAccessEmployeeDni(String dni) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -42,7 +42,7 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canAccessLicense(Long licenseId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -54,7 +54,7 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canAccessCertificate(Long certificateId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -66,7 +66,7 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canCreateLicenseForEmployee(Long employeeId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -74,7 +74,7 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canCreateVacationForEmployee(Long employeeId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
@@ -82,30 +82,11 @@ public class SecurityAuthorizationService {
     }
 
     public boolean canCreateVacationForEmployeeDni(String dni) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
         }
 
         return canAccessEmployeeDni(dni);
-    }
-
-    public boolean canCreateComplaintForEmployee(Long employeeId) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
-            return true;
-        }
-
-        return canAccessEmployee(employeeId);
-    }
-
-    public boolean canCreateComplaintForEmployeeDni(String dni) {
-        if (hasAnyRole("ROLE_ADMIN", "ROLE_RRHH")) {
-            return true;
-        }
-
-        AccountEntity account = getCurrentAccount();
-        return account != null
-                && account.getEmployee() != null
-                && account.getEmployee().getDni().equals(dni);
     }
 
     public boolean canDeleteLicense(Long licenseId) {
@@ -113,13 +94,13 @@ public class SecurityAuthorizationService {
             return true;
         }
 
-        if (hasAnyRole("ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_STAFF")) {
             return false;
         }
 
         AccountEntity account = getCurrentAccount();
         return account != null && licenseRepository.findById(licenseId)
-                .map(license -> license.getStatus() == LicenseStatusEnum.PENDING
+                .map(license -> license.getStatus() == AbsenceStatus.PENDING
                         && license.getEmployee().getAccount() != null
                         && license.getEmployee().getAccount().getId_account().equals(account.getId_account()))
                 .orElse(false);
@@ -130,13 +111,13 @@ public class SecurityAuthorizationService {
             return true;
         }
 
-        if (hasAnyRole("ROLE_RRHH")) {
+        if (hasAnyRole("ROLE_STAFF")) {
             return false;
         }
 
         AccountEntity account = getCurrentAccount();
         return account != null && vacationRepository.findById(vacationId)
-                .map(vacation -> !vacation.isAccepted()
+                .map(vacation -> vacation.getStatus() == AbsenceStatus.PENDING
                         && vacation.getEmployee().getAccount() != null
                         && vacation.getEmployee().getAccount().getId_account().equals(account.getId_account()))
                 .orElse(false);

@@ -2,7 +2,7 @@
 
 [English version](README.en.md)
 
-HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones, suspensiones, denuncias y certificados.
+HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones y certificados.
 
 El proyecto esta planteado como un MVP academico: el foco esta en tener reglas de negocio claras, autenticacion con JWT, permisos por rol y endpoints faciles de probar desde Postman o Swagger.
 
@@ -136,7 +136,7 @@ Authorization: Bearer <token>
 Roles principales:
 
 - `ADMIN`: administra todo el sistema.
-- `RRHH`: gestiona empleados, licencias, vacaciones, suspensiones, denuncias y liquidaciones.
+- `STAFF`: gestiona empleados, licencias, vacaciones y liquidaciones.
 - `EMPLOYEE`: consulta y opera sobre recursos propios cuando la regla de negocio lo permite.
 
 ## Swagger
@@ -177,8 +177,6 @@ El detalle completo de endpoints esta en `docs/Informe_Entidades_Endpoints.md`. 
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
 | Vacations | `/api/vacations` |
-| Complaints | `/api/complaints` |
-| Suspensions | `/api/suspensions` |
 
 Los filtros en endpoints `GET` se envian por query params. No hace falta mandar todos los filtros: se puede enviar uno, varios o ninguno.
 
@@ -186,7 +184,7 @@ Ejemplos:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
-GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
+GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
 GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
 ```
 
@@ -223,13 +221,12 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 ## Reglas importantes
 
 - Un empleado no puede consultar liquidaciones de otro empleado.
-- RRHH y ADMIN pueden consultar liquidaciones de cualquier empleado.
-- Solo RRHH y ADMIN pueden cargar, modificar o borrar liquidaciones.
+- STAFF y ADMIN pueden consultar liquidaciones de cualquier empleado.
+- Solo STAFF y ADMIN pueden cargar, modificar o borrar liquidaciones.
 - No se permite cargar dos liquidaciones para el mismo empleado en el mismo mes.
-- El empleado puede eliminar sus propias solicitudes de licencia o vacaciones solo si no fueron aceptadas.
-- RRHH no elimina solicitudes de licencia/vacaciones: las gestiona, aprueba o rechaza.
+- El empleado puede eliminar sus propias solicitudes de licencia o vacaciones solo si siguen en estado PENDING.
+- STAFF no elimina solicitudes de licencia/vacaciones: las gestiona, aprueba o rechaza.
 - ADMIN puede administrar todos los recursos.
-- Las denuncias solo pueden ser listadas o revisadas por RRHH o ADMIN.
 
 ## Errores comunes
 

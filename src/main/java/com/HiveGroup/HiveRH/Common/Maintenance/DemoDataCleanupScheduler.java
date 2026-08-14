@@ -25,10 +25,8 @@ public class DemoDataCleanupScheduler {
             "payroll_variation",
             "payroll",
             "vacation",
-            "suspension",
-            "complaint",
             "license",
-            "employee_department_position",
+            "employee_assignment",
             "employee"
     );
 

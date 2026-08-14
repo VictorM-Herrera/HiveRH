@@ -57,25 +57,25 @@ public class EmployeeController {
     }
 
     @PostMapping
-    @Operation(summary = "Create employee", description = "Registers an active employee and automatically creates a linked EMPLOYEE account with initial credentials.")
+    @Operation(summary = "Create employee", description = "Registers an active employee, creates the first active labor assignment, and automatically creates a linked EMPLOYEE account with initial credentials.")
     public ResponseEntity<EmployeeResponseDTO> createEmployee(@Valid @RequestBody EmployeeCreateDTO employeeCreateDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.create(employeeCreateDTO));
     }
 
     @PatchMapping("/{dni}")
-    @Operation(summary = "Partially update employee", description = "Updates only the fields provided in the request.")
+    @Operation(summary = "Partially update employee", description = "Updates only the fields provided in the request. Assignment changes close the current active assignment and create a new one.")
     public ResponseEntity<EmployeeResponseDTO> patchEmployee(@PathVariable String dni, @Valid @RequestBody EmployeePatchDTO employeePatchDTO) {
         return ResponseEntity.ok(employeeService.patchByDni(dni, employeePatchDTO));
     }
 
     @PutMapping("/{dni}")
-    @Operation(summary = "Update employee", description = "Updates employee data.")
+    @Operation(summary = "Update employee", description = "Updates employee data and keeps the current labor assignment in sync.")
     public ResponseEntity<EmployeeResponseDTO> putEmployee(@NonNull @PathVariable String dni, @Valid @RequestBody EmployeeUpdateDTO employeeUpdateDTO) {
         return ResponseEntity.ok(employeeService.putByDni(dni, employeeUpdateDTO));
     }
 
     @DeleteMapping("/{dni}")
-    @Operation(summary = "Terminate employee", description = "Soft-deletes the employee by DNI, changing their status to TERMINATED.")
+    @Operation(summary = "Terminate employee", description = "Soft-deletes the employee by DNI, changing their status to TERMINATED and closing active assignments.")
     public ResponseEntity<EmployeeResponseDTO> deleteEmployee(@NonNull @PathVariable String dni) {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
     }

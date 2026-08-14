@@ -2,7 +2,7 @@
 
 [Version en espanol](README.md)
 
-HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, payroll records, leaves, vacations, suspensions, internal complaints, and certificates.
+HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, payroll records, leaves, vacations, and certificates.
 
 The project is designed as an academic MVP. The main goal is to provide clear business rules, JWT authentication, role-based permissions, and endpoints that are easy to test from Postman or Swagger.
 
@@ -136,7 +136,7 @@ Authorization: Bearer <token>
 Main roles:
 
 - `ADMIN`: manages the whole system.
-- `RRHH`: manages employees, leaves, vacations, suspensions, complaints, and payroll records.
+- `STAFF`: manages employees, leaves, vacations, and payroll records.
 - `EMPLOYEE`: can view and operate on their own resources when the business rule allows it.
 
 ## Swagger
@@ -177,8 +177,6 @@ The complete endpoint details are available in `docs/Informe_Entidades_Endpoints
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
 | Vacations | `/api/vacations` |
-| Complaints | `/api/complaints` |
-| Suspensions | `/api/suspensions` |
 
 Filters in `GET` endpoints are sent as query params. It is not necessary to send every filter: one, several, or none can be provided.
 
@@ -186,7 +184,7 @@ Examples:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
-GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
+GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
 GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
 ```
 
@@ -223,13 +221,12 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 ## Important Rules
 
 - An employee cannot view another employee's payroll records.
-- `RRHH` and `ADMIN` can view any employee payroll records.
-- Only `RRHH` and `ADMIN` can create, update, or delete payroll records.
+- `STAFF` and `ADMIN` can view any employee payroll records.
+- Only `STAFF` and `ADMIN` can create, update, or delete payroll records.
 - Two payroll records cannot be created for the same employee in the same month.
-- Employees can delete their own leave or vacation requests only if they have not been accepted.
-- `RRHH` does not delete leave or vacation requests; it manages, approves, or rejects them.
+- Employees can delete their own leave or vacation requests only if they are still PENDING.
+- `STAFF` does not delete leave or vacation requests; it manages, approves, or rejects them.
 - `ADMIN` can manage all resources.
-- Internal complaints can only be listed or reviewed by `RRHH` or `ADMIN`.
 
 ## Common Errors
 

@@ -28,8 +28,8 @@ public class PayrollController {
     private final PayrollService payrollService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
-    @Operation(summary = "List payrolls", description = "Returns paginated payroll records. Requires ADMIN or RRHH role.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "List payrolls", description = "Returns paginated payroll records. Requires ADMIN or STAFF role.")
     public ResponseEntity<PageResponseDTO<PayrollResponse>> getPayrolls(@ParameterObject Pageable pageable) {
         return ResponseEntity.ok(payrollService.getAllPage(pageable));
     }
@@ -45,7 +45,7 @@ public class PayrollController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Create payroll", description = "Generates a payroll by calculating base salary plus variations. Validates active employee status, salary rules, and one payroll per month.")
     public ResponseEntity<PayrollResponse> createPayroll(
             @Valid @RequestBody PayrollRequest request
@@ -56,7 +56,7 @@ public class PayrollController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Update payroll", description = "Updates an existing payroll and recalculates values from the submitted request.")
     public ResponseEntity<PayrollResponse> updatePayroll(
             @NonNull @PathVariable Long id,
@@ -66,7 +66,7 @@ public class PayrollController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RRHH')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @Operation(summary = "Delete payroll", description = "Deletes a payroll record and returns the deleted data.")
     public ResponseEntity<PayrollResponse> deletePayroll(@NonNull @PathVariable Long id) {
         return ResponseEntity.ok(payrollService.deleteById(id));

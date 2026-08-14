@@ -104,7 +104,7 @@ public class AccountService {
         if (hasRole("ROLE_ADMIN")) {
             return;
         }
-        if (hasRole("ROLE_RRHH") && rol == RolEnum.RRHH) {
+        if (hasRole("ROLE_STAFF") && rol == RolEnum.STAFF) {
             return;
         }
 

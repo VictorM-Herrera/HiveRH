@@ -1,6 +1,7 @@
 package com.HiveGroup.HiveRH.Features.License;
 
-import com.HiveGroup.HiveRH.Common.Utils.Enums.LicenseStatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AbsenceStatus;
+import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Certificate.CertificateEntity;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import jakarta.persistence.*;
@@ -26,7 +27,7 @@ public class LicenseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private LicenseStatusEnum status;
+    private AbsenceStatus status;
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
@@ -40,12 +41,16 @@ public class LicenseEntity {
     @Column(name = "motive", length = 300)
     private String motive;
 
-    @Column(name = "description", length = 200)
-    private String description;
-
     @OneToMany(mappedBy = "license", cascade = CascadeType.ALL)
     //@JsonManagedReference
     private List<CertificateEntity> certificates;
+
+    @ManyToOne
+    @JoinColumn(name = "reviewed_by_account_id")
+    private AccountEntity reviewedBy;
+
+    @Column(name = "review_comment", length = 500)
+    private String reviewComment;
 
     @ManyToOne
     @JoinColumn(name = "id_employee", nullable = false)
@@ -59,7 +64,7 @@ public class LicenseEntity {
         }
 
         if (status == null) {
-            status = LicenseStatusEnum.PENDING;
+            status = AbsenceStatus.PENDING;
         }
     }
 }

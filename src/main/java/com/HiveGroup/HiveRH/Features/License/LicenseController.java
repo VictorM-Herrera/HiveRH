@@ -59,7 +59,7 @@ public class LicenseController {
     }
 
     @PatchMapping("/{id_license}")
-    @Operation(summary = "Review license", description = "Allows RRHH or ADMIN users to update the license status and paid flag.")
+    @Operation(summary = "Review license", description = "Allows STAFF or ADMIN users to update the license status, paid flag, and review comment.")
     public ResponseEntity<LicenseDTO> reviewLicense(
             @PathVariable("id_license") @Positive(message = "El ID de la licencia debe ser mayor que cero") Long idLicense,
             @Valid @RequestBody LicenseReviewRequestDTO request) {

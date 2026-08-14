@@ -4,7 +4,7 @@ Este informe describe el recorrido completo del sistema HiveRH, desde la autenti
 
 La idea es que sirva como guía de defensa, documentación de endpoints y orden recomendado para completar una colección de Postman.
 
-El proyecto expone una API RESTful orientada a la gestión de recursos humanos. A través de esta API se pueden administrar cuentas, empleados, estructura organizacional, licencias, certificados, vacaciones, denuncias, suspensiones, variaciones salariales y liquidaciones de sueldo.
+El proyecto expone una API RESTful orientada a la gestión de recursos humanos. A través de esta API se pueden administrar cuentas, empleados, estructura organizacional, licencias, certificados, vacaciones, variaciones salariales y liquidaciones de sueldo.
 
 ---
 
@@ -50,11 +50,11 @@ Es el rol con mayor nivel de permisos dentro del sistema.
 
 Puede crear sucursales, departamentos, puestos, variaciones, empleados, modificar roles y acceder a recursos administrativos.
 
-#### RRHH
+#### STAFF
 
 Es el rol operativo del área de Recursos Humanos.
 
-Puede gestionar empleados, licencias, suspensiones y consultar información sensible según la configuración de seguridad del sistema.
+Puede gestionar empleados, licencias, vacaciones y consultar información sensible según la configuración de seguridad del sistema.
 
 #### EMPLOYEE
 
@@ -80,7 +80,7 @@ Se utiliza para validar el acceso a determinados recursos, como empleados, licen
 
 Los endpoints que no tienen una regla específica igualmente requieren un token válido.
 
-Algunos módulos, como payroll, vacation y complaint, quedan protegidos por autenticación general, aunque no necesariamente diferenciados por rol.
+Algunos módulos, como payroll y vacation, quedan protegidos por autenticación general, aunque no necesariamente diferenciados por rol.
 
 ---
 
@@ -132,6 +132,8 @@ Gestiona los empleados de la empresa.
 
 Al crear un empleado, el sistema exige que se indique una sucursal, un puesto y un departamento.
 
+Esos datos no se guardan como relación directa del empleado, sino como su primera asignación laboral activa.
+
 Además, al registrar un nuevo empleado se genera automáticamente una cuenta con rol EMPLOYEE por defecto.
 
 ### Variation
@@ -166,23 +168,7 @@ Permite asociar certificados a una licencia y también permite realizar actualiz
 
 Gestiona los certificados PDF asociados a las licencias.
 
-Utiliza multipart/form-data para permitir la carga de archivos desde el cliente hacia el sistema.
-
-### Complaint
-
-Gestiona las denuncias realizadas dentro del sistema.
-
-Al crear una denuncia, esta queda inicialmente en estado pendiente.
-
-Luego puede ser marcada como revisada cuando corresponda.
-
-### Suspension
-
-Gestiona las suspensiones de empleados.
-
-Al registrar una suspensión, el sistema cambia automáticamente el estado del empleado a SUSPENDED.
-
----
+Utiliza multipart/form-data para permitir la carga de archivos desde el cliente hacia el sistema y registra la fecha de carga del certificado.
 
 ## Preparación inicial
 
@@ -197,7 +183,7 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 - El usuario se autentica con POST /api/auth/login enviando identifier y password.
 - El identifier puede ser usuario o email porque la búsqueda se realiza por user o email.
-- Si las credenciales son correctas, la API devuelve un token JWT que incluye el rol como authority ROLE_ADMIN, ROLE_RRHH o ROLE_EMPLOYEE.
+- Si las credenciales son correctas, la API devuelve un token JWT que incluye el rol como authority ROLE_ADMIN, ROLE_STAFF o ROLE_EMPLOYEE.
 - Con el token activo se puede registrar una cuenta, cambiar email propio, cambiar contraseña propia o, si se es ADMIN, cambiar roles.
 
 ---
@@ -215,16 +201,19 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 
 - Con sucursal, puesto y departamento ya existentes, se crea el empleado mediante POST /api/employees.
 - El empleado nace con estado ACTIVE.
+- Se crea una asignación laboral activa con sucursal, puesto y departamento. Su startDate inicial toma la fecha de contratación del empleado.
 - El sistema crea automáticamente una cuenta por defecto para ese empleado: usuario igual al DNI, email {dni}@hiverh.local y contraseña inicial igual al DNI.
-- La respuesta del empleado incluye sus datos personales, estado, sucursal, cuenta asociada y asignación con puesto/departamento.
+- La respuesta del empleado incluye sus datos personales, estado, cuenta asociada y asignaciones laborales con sucursal, puesto, departamento, startDate, endDate y active.
 
 ---
 
 ## 4. Gestión de empleados
 
-- RRHH o ADMIN pueden listar empleados y filtrarlos por nombre, DNI, sucursal, fecha de ingreso, estado, puesto, departamento o rango salarial.
-- PATCH permite actualizar datos puntuales sin enviar todo el objeto. En el controlador actual, PUT también invoca la lógica parcial de actualización.
-- DELETE no borra físicamente al empleado: cambia su estado a TERMINATED.
+- STAFF o ADMIN pueden listar empleados y filtrarlos por nombre, DNI, sucursal, fecha de ingreso, estado, puesto, departamento o rango salarial.
+- PATCH permite actualizar datos puntuales sin enviar todo el objeto.
+- PUT actualiza el empleado completo y recibe sucursal, puesto y departamento para mantener la asignación laboral actual.
+- Si cambia sucursal, puesto o departamento, el sistema cierra la asignación activa con endDate y crea una nueva asignación activa.
+- DELETE no borra físicamente al empleado: cambia su estado a TERMINATED y cierra sus asignaciones activas.
 - El empleado autenticado puede consultar su propio perfil con GET /api/employees/me.
 
 ---
@@ -253,36 +242,17 @@ Al registrar una suspensión, el sistema cambia automáticamente el estado del e
 - Las vacaciones se registran con /api/vacations y se asocian a un empleado por DNI.
 - El sistema valida empleado activo, fechas obligatorias, fecha final posterior a inicio, que la solicitud no sea posterior al inicio y que exista una anticipación mínima de 5 días hábiles.
 - También evita vacaciones superpuestas para el mismo empleado.
-- Permite listar por estado de aceptación, rango de fechas, DNI del empleado y nombre completo.
+- Permite listar por estado, rango de fechas, DNI del empleado y nombre completo.
 
 ---
 
 ## 8. Licencias y certificados
 
 - Las licencias se registran con /api/licenses y representan ausencias justificadas, por ejemplo licencia médica.
-- Las licencias nuevas se crean para el empleado autenticado, quedan inicialmente en estado PENDING y luego RRHH o ADMIN pueden revisarlas con estado ACCEPTED, DENIED o REJECTED.
+- Las licencias nuevas se crean para el empleado autenticado, quedan inicialmente en estado PENDING y luego STAFF o ADMIN pueden revisarlas con estado APPROVED, REJECTED o CANCELLED.
 - Se puede crear la licencia y luego adjuntar uno o más certificados PDF con /api/certificates usando multipart/form-data.
-- Un ADMIN o RRHH puede listar todas las licencias; un empleado puede acceder a sus propias licencias/certificados según las reglas de autorización.
-- El certificado se guarda como bytes y puede consultarse como PDF o como información resumida.
-
----
-
-## 9. Denuncias internas
-
-- Las denuncias se crean con /api/complaints y se asocian a un empleado activo.
-- Al crearse quedan en estado PENDING.
-- Luego se puede cambiar el estado a REVIEWED mediante PUT /api/complaints/{id_complaint}. Una denuncia revisada no puede volver a modificarse.
-- El listado permite filtrar por ID, título, estado y rango de fechas.
-
----
-
-## 10. Suspensiones
-
-- Una suspensión se registra con /api/suspensions indicando DNI del empleado, motivo y rango de fechas.
-- El sistema valida empleado, motivo obligatorio y fechas coherentes.
-- Al crear la suspensión cambia el estado del empleado a SUSPENDED.
-- Un proceso programado reactiva automáticamente al empleado cuando finaliza la suspensión, siempre que siga en estado SUSPENDED. Si fue dado de baja mientras estaba suspendido, permanece TERMINATED.
-- Luego las liquidaciones y vacaciones no deberían poder registrarse para ese empleado mientras no vuelva a estar ACTIVE, porque esos servicios validan el estado del empleado.
+- Un ADMIN o STAFF puede listar todas las licencias; un empleado puede acceder a sus propias licencias/certificados según las reglas de autorización.
+- El certificado se guarda como bytes, registra su fecha de carga y puede consultarse como PDF o como información resumida.
 
 ---
 
@@ -323,7 +293,7 @@ Si las credenciales son correctas, el sistema devuelve un token JWT que luego se
 
 Permite registrar nuevas cuentas dentro del sistema.
 
-Este endpoint está disponible únicamente para usuarios con rol ADMIN o RRHH.
+Este endpoint está disponible únicamente para usuarios con rol ADMIN o STAFF.
 
 Al registrar una cuenta, la contraseña se guarda encriptada por seguridad.
 
@@ -445,21 +415,27 @@ Crea un nuevo empleado en estado ACTIVE.
 
 Al crear el empleado, también se genera automáticamente una cuenta con rol EMPLOYEE por defecto.
 
+También crea la primera asignación laboral activa con sucursal, puesto y departamento.
+
 ### PATCH /api/employees/{dni}
 
 Actualiza parcialmente los datos de un empleado.
 
 Solo modifica los campos enviados en la solicitud.
 
+Si se envía id_branch, id_position o id_department, se actualiza la asignación laboral activa conservando historial.
+
 ### PUT /api/employees/{dni}
 
 Actualiza los datos del empleado.
+
+Debe recibir la asignación laboral actual mediante id_branch, id_position e id_department.
 
 ### DELETE /api/employees/{dni}
 
 Realiza una baja lógica del empleado.
 
-El empleado no se elimina físicamente, sino que su estado cambia a TERMINATED.
+El empleado no se elimina físicamente, sino que su estado cambia a TERMINATED y sus asignaciones activas pasan a inactivas.
 
 ---
 
@@ -527,7 +503,7 @@ Luego de eliminarla, devuelve los datos de la liquidación eliminada.
 
 Lista las vacaciones registradas en formato paginado.
 
-Permite aplicar filtros por aceptación, rango de fechas, DNI del empleado y nombre completo.
+Permite aplicar filtros por estado, rango de fechas, DNI del empleado y nombre completo.
 
 ### POST /api/vacations
 
@@ -563,9 +539,9 @@ Crea una nueva licencia asociada al empleado autenticado. El empleado no indica 
 
 ### PATCH /api/licenses/{id_license}
 
-Permite a RRHH o ADMIN revisar una licencia, actualizando su estado y si es paga.
+Permite a STAFF o ADMIN revisar una licencia, actualizando su estado, si es paga y el comentario de revisión.
 
-Los estados posibles son PENDING, ACCEPTED, DENIED y REJECTED.
+Los estados posibles son PENDING, APPROVED, REJECTED y CANCELLED.
 
 ### DELETE /api/licenses/{id_license}
 
@@ -587,49 +563,11 @@ Descarga el archivo PDF almacenado correspondiente al certificado.
 
 ### GET /api/certificate-info?id={id}
 
-Consulta la información del certificado sin descargar el archivo PDF.
+Consulta la información del certificado sin descargar el archivo PDF. La respuesta incluye descripción, fecha de carga y licencia asociada.
 
 ### DELETE /api/certificate/{id_certificate}
 
 Elimina el certificado indicado.
-
----
-
-## Complaint
-
-### GET /api/complaints
-
-Lista las denuncias registradas en el sistema.
-
-Permite aplicar filtros según los parámetros disponibles.
-
-### POST /api/complaints
-
-Crea una nueva denuncia en estado PENDING.
-
-Esto indica que la denuncia queda pendiente de revisión.
-
-### PUT /api/complaints/{id_complaint}
-
-Actualiza el estado de una denuncia.
-
-Permite cambiar el estado a PENDING o REVIEWED, según corresponda. Una denuncia ya revisada no puede volver a modificarse.
-
----
-
-## Suspension
-
-### GET /api/suspensions
-
-Lista las suspensiones registradas en el sistema.
-
-Permite aplicar filtros según los parámetros disponibles.
-
-### POST /api/suspensions
-
-Registra una nueva suspensión para un empleado.
-
-Al crear la suspensión, el sistema cambia automáticamente el estado del empleado a SUSPENDED.
 
 ---
 
@@ -657,7 +595,7 @@ user,
 password,
 email,
 rol,
-status_enum
+status
 ) VALUES (
 'admin',
 '$2a$10$czl.qKI0ivobJHuvXyYtHuuC86AvTp4r52LszMK3UdCNQ85mXguF6',
@@ -716,16 +654,16 @@ Endpoint: /api/auth/register
 
 Permite registrar una nueva cuenta dentro del sistema.
 
-Este endpoint está disponible para usuarios con rol ADMIN o RRHH.
+Este endpoint está disponible para usuarios con rol ADMIN o STAFF.
 
 Body:
 
 ```json
 {
-  "user": "rrhh1",
-  "email": "rrhh1@hiverh.com",
+  "user": "staff1",
+  "email": "staff1@hiverh.com",
   "password": "123456",
-  "rol": "RRHH"
+  "rol": "STAFF"
 }
 ```
 
@@ -781,7 +719,7 @@ Body:
 
 ```json
 {
-  "name": "Analista de RRHH"
+  "name": "Analista de Personal"
 }
 ```
 
@@ -834,7 +772,10 @@ Body:
 ```json
 {
   "phoneNumber": "2235552222",
-  "base_salary": 900000.0
+  "base_salary": 900000.0,
+  "id_branch": 1,
+  "id_position": 1,
+  "id_department": 1
 }
 ```
 
@@ -922,10 +863,8 @@ Body:
 ```json
 {
   "requestDate": "2026-06-11",
-  "accepted": true,
   "startDate": "2026-07-01",
   "endDate": "2026-07-10",
-  "paid": true,
   "dniEmployee": "40111222"
 }
 ```
@@ -947,7 +886,6 @@ Body:
   "startDate": "2026-06-15",
   "endDate": "2026-06-17",
   "motive": "Licencia médica",
-  "description": "Reposo indicado por profesional",
   "idCertificates": []
 }
 ```
@@ -962,14 +900,15 @@ Endpoint: /api/licenses/1
 
 Permite revisar una licencia.
 
-Solo RRHH o ADMIN pueden actualizar el estado y si es paga.
+Solo STAFF o ADMIN pueden actualizar el estado, si es paga y el comentario de revisión.
 
 Body:
 
 ```json
 {
-  "status": "ACCEPTED",
-  "isPaid": true
+  "status": "APPROVED",
+  "isPaid": true,
+  "reviewComment": "Licencia aprobada con certificado"
 }
 ```
 
@@ -997,69 +936,6 @@ description = Certificado médico
 
 ```text
 file = archivo.pdf
-```
-
----
-
-## Crear denuncia
-
-Método: POST
-
-Endpoint: /api/complaints
-
-Permite crear una denuncia.
-
-La denuncia queda inicialmente en estado PENDING.
-
-Body:
-
-```json
-{
-  "title": "Incidente interno",
-  "description": "Se registra una situación para revisión de RRHH",
-  "dni": "40111222"
-}
-```
-
----
-
-## Actualizar denuncia
-
-Método: PUT
-
-Endpoint: /api/complaints/1
-
-Permite actualizar el estado de una denuncia.
-
-Body:
-
-```json
-{
-  "status": "REVIEWED"
-}
-```
-
----
-
-## Crear suspensión
-
-Método: POST
-
-Endpoint: /api/suspensions
-
-Permite registrar una suspensión para un empleado.
-
-Al crear la suspensión, el estado del empleado cambia a SUSPENDED.
-
-Body:
-
-```json
-{
-  "dniEmployee": "40111222",
-  "motive": "Incumplimiento de normas internas",
-  "start_date": "2026-06-20",
-  "end_date": "2026-06-22"
-}
 ```
 
 ---

@@ -1,17 +1,12 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
-import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.GenreEnum;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
-import com.HiveGroup.HiveRH.Features.Branch.BranchEntity;
-import com.HiveGroup.HiveRH.Features.Complaint.ComplaintEntity;
 import com.HiveGroup.HiveRH.Features.EmployeeAssignment.EmployeeAssignmentEntity;
 import com.HiveGroup.HiveRH.Features.License.LicenseEntity;
 import com.HiveGroup.HiveRH.Features.Payroll.PayrollEntity;
-import com.HiveGroup.HiveRH.Features.Suspension.SuspensionEntity;
 import com.HiveGroup.HiveRH.Features.Vacation.VacationEntity;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -64,11 +59,7 @@ public class EmployeeEntity {
     private Double baseSalary;
 
     @Enumerated(EnumType.STRING)
-    private StatusEnum status = StatusEnum.ACTIVE;
-
-    @ManyToOne
-    @JoinColumn(name = "id_branch", nullable = false)
-    private BranchEntity branch;
+    private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
     @OneToOne(optional = true)
     @JoinColumn(name = "id_account", nullable = true)
@@ -85,10 +76,4 @@ public class EmployeeEntity {
 
     @OneToMany(mappedBy = "employee")
     private List<VacationEntity> vacations = null;
-
-    @OneToMany(mappedBy = "employee")
-    private List<SuspensionEntity> suspensions = null;
-
-    @OneToMany(mappedBy = "employee")
-    private List<ComplaintEntity> complaints = null;
 }

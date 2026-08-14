@@ -24,8 +24,8 @@ public class OpenApiConfiguration {
                         .title("HiveRH API")
                         .description("""
                                 REST API for Human Resources workflows: employees, accounts, roles,
-                                organizational structure, payrolls, licenses, vacations, suspensions,
-                                complaints, certificates, and salary variations.
+                                organizational structure, payrolls, licenses, vacations, certificates,
+                                and salary variations.
 
                                 ### How to test this API
 
@@ -42,7 +42,7 @@ public class OpenApiConfiguration {
 
                                 - `ADMIN`: manages accounts, roles, branches, departments, positions, and general resources.
                                 
-                                - `RRHH`: manages employees, licenses, vacations, suspensions, complaints, and payrolls.
+                                - `STAFF`: manages employees, licenses, vacations, and payrolls.
                                 
                                 - `EMPLOYEE`: reads and manages their own resources when business rules allow it.
 
@@ -66,9 +66,7 @@ public class OpenApiConfiguration {
                         new Tag().name("08 Payrolls").description("Payroll records and employee payroll queries."),
                         new Tag().name("09 Vacations").description("Vacation requests and records."),
                         new Tag().name("10 Licenses").description("Employee licenses and approval status."),
-                        new Tag().name("11 Certificates").description("PDF certificate upload, lookup, and download."),
-                        new Tag().name("12 Complaints").description("Internal complaints and review tracking."),
-                        new Tag().name("13 Suspensions").description("Employee suspensions and related status changes.")
+                        new Tag().name("11 Certificates").description("PDF certificate upload, lookup, and download.")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new Components()

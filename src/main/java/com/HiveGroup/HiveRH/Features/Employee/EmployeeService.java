@@ -1,7 +1,8 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Common.Utils.TextSearchUtils;
@@ -30,6 +31,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -60,14 +62,9 @@ public class EmployeeService {
             throw new EntityNotFoundException("El departamento es obligatorio", "Department");
         }
 
-        BranchEntity branch = branchRepository.findById(employeeCreateDTO.id_branch())
-                .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada", "Branch"));
-
-        PositionEntity position = positionRepository.findById(employeeCreateDTO.id_position())
-                .orElseThrow(() -> new EntityNotFoundException("Puesto no encontrado", "Position"));
-
-        DepartmentEntity department = departamentRepository.findById(employeeCreateDTO.id_department())
-                .orElseThrow(() -> new EntityNotFoundException("Departamento no encontrado", "Department"));
+        BranchEntity branch = findBranchById(employeeCreateDTO.id_branch());
+        PositionEntity position = findPositionById(employeeCreateDTO.id_position());
+        DepartmentEntity department = findDepartmentById(employeeCreateDTO.id_department());
 
         EmployeeEntity employee = EmployeeEntity.builder()
                 .name(employeeCreateDTO.name())
@@ -80,14 +77,16 @@ public class EmployeeService {
                 .birthdate(employeeCreateDTO.birth_date())
                 .hireDate(employeeCreateDTO.hire_date())
                 .baseSalary(employeeCreateDTO.base_salary())
-                .status(StatusEnum.ACTIVE)
-                .branch(branch)
+                .status(EmployeeStatus.ACTIVE)
                 .build();
 
-        EmployeeAssignmentEntity assignment = new EmployeeAssignmentEntity();
-        assignment.setEmployee(employee);
-        assignment.setPosition(position);
-        assignment.setDepartment(department);
+        EmployeeAssignmentEntity assignment = createAssignment(
+                employee,
+                branch,
+                position,
+                department,
+                employeeCreateDTO.hire_date()
+        );
 
         List<EmployeeAssignmentEntity> assignments = new ArrayList<>();
         assignments.add(assignment);
@@ -112,10 +111,15 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findByDni(dni)
                 .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado para el DNI indicado", "Employee"));
 
-        employee.setStatus(StatusEnum.TERMINATED);
+        employee.setStatus(EmployeeStatus.TERMINATED);
+        if (employee.getTerminationDate() == null) {
+            employee.setTerminationDate(LocalDate.now());
+        }
+        closeActiveAssignments(employee, employee.getTerminationDate());
+
         if (employee.getAccount() != null) {
             AccountEntity account = employee.getAccount();
-            account.setStatusEnum(StatusEnum.TERMINATED);
+            account.setStatus(AccountStatus.INACTIVE);
             accountRepository.save(account);
         }
 
@@ -145,10 +149,20 @@ public class EmployeeService {
         employee.setStatus(employeeUpdateDTO.status());
         employee.setBaseSalary(employeeUpdateDTO.base_salary());
 
-        BranchEntity branch = branchRepository.findById(employeeUpdateDTO.id_branch())
-                .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada", "Branch"));
-
-        employee.setBranch(branch);
+        if (employee.getStatus() == EmployeeStatus.TERMINATED) {
+            if (employee.getTerminationDate() == null) {
+                employee.setTerminationDate(LocalDate.now());
+            }
+            closeActiveAssignments(employee, employee.getTerminationDate());
+        } else {
+            updateCurrentAssignment(
+                    employee,
+                    employeeUpdateDTO.id_branch(),
+                    employeeUpdateDTO.id_position(),
+                    employeeUpdateDTO.id_department(),
+                    LocalDate.now()
+            );
+        }
 
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
 
@@ -181,11 +195,23 @@ public class EmployeeService {
         employee.setStatus(employeePatchDTO.status() != null ? employeePatchDTO.status() : employee.getStatus());
         employee.setBaseSalary(employeePatchDTO.base_salary() != null ? employeePatchDTO.base_salary() : employee.getBaseSalary());
 
-        if (employeePatchDTO.id_branch() != null) {
-            BranchEntity branch = branchRepository.findById(employeePatchDTO.id_branch())
-                    .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada", "Branch"));
+        boolean shouldUpdateAssignment = employeePatchDTO.id_branch() != null
+                || employeePatchDTO.id_position() != null
+                || employeePatchDTO.id_department() != null;
 
-            employee.setBranch(branch);
+        if (employee.getStatus() == EmployeeStatus.TERMINATED) {
+            if (employee.getTerminationDate() == null) {
+                employee.setTerminationDate(LocalDate.now());
+            }
+            closeActiveAssignments(employee, employee.getTerminationDate());
+        } else if (shouldUpdateAssignment) {
+            updateCurrentAssignment(
+                    employee,
+                    employeePatchDTO.id_branch(),
+                    employeePatchDTO.id_position(),
+                    employeePatchDTO.id_department(),
+                    LocalDate.now()
+            );
         }
 
         EmployeeEntity updatedEmployee = employeeRepository.save(employee);
@@ -223,12 +249,12 @@ public class EmployeeService {
                 .map(this::toDTO)
                 .filter(employee -> TextSearchUtils.matchesFullName(employee.name(), employee.lastName(), activeFilters.fullName()))
                 .filter(employee -> activeFilters.dni() == null || employee.dni().equals(activeFilters.dni()))
-                .filter(employee -> activeFilters.id_branch() == null || employee.branch_id().equals(activeFilters.id_branch()))
+                .filter(employee -> activeFilters.id_branch() == null || employee.assignments().stream().anyMatch(a -> a.active() && Objects.equals(a.branchId(), activeFilters.id_branch())))
                 .filter(employee -> activeFilters.hire_date() == null || employee.hireDate().equals(activeFilters.hire_date()))
                 .filter(employee -> activeFilters.termination_date() == null || employee.terminationDate().equals(activeFilters.termination_date()))
                 .filter(employee -> activeFilters.status() == null || employee.status() == activeFilters.status())
-                .filter(employee -> activeFilters.position() == null || employee.assignments().stream().anyMatch(a -> a.positionName().equalsIgnoreCase(activeFilters.position())))
-                .filter(employee -> activeFilters.department() == null || employee.assignments().stream().anyMatch(a -> a.departmentName().equalsIgnoreCase(activeFilters.department())))
+                .filter(employee -> activeFilters.position() == null || employee.assignments().stream().anyMatch(a -> a.active() && a.positionName().equalsIgnoreCase(activeFilters.position())))
+                .filter(employee -> activeFilters.department() == null || employee.assignments().stream().anyMatch(a -> a.active() && a.departmentName().equalsIgnoreCase(activeFilters.department())))
                 .filter(employee -> activeFilters.min_salary() == null || employee.baseSalary() >= activeFilters.min_salary())
                 .filter(employee -> activeFilters.max_salary() == null || employee.baseSalary() <= activeFilters.max_salary())
                 .toList();
@@ -241,10 +267,15 @@ public class EmployeeService {
                 ? List.of()
                 : employee.getAssignments().stream()
                 .map(assignment -> new EmployeeAssignmentDTO(
+                        assignment.getBranch().getId_branch(),
+                        assignment.getBranch().getBranchName(),
                         assignment.getDepartment().getId_department(),
                         assignment.getDepartment().getDepartmentName(),
                         assignment.getPosition().getId_position(),
-                        assignment.getPosition().getPositionName()
+                        assignment.getPosition().getPositionName(),
+                        assignment.getStartDate(),
+                        assignment.getEndDate(),
+                        assignment.isActive()
                 ))
                 .toList();
 
@@ -261,7 +292,6 @@ public class EmployeeService {
                 employee.getTerminationDate(),
                 employee.getBaseSalary(),
                 employee.getStatus(),
-                employee.getBranch().getId_branch(),
                 employee.getAccount() != null ? employee.getAccount().getId_account() : null,
                 assignments
         );
@@ -275,7 +305,7 @@ public class EmployeeService {
                 .email(dni + "@hiverh.com")
                 .password(passwordEncoder.encode(dni))
                 .rol(RolEnum.EMPLOYEE)
-                .statusEnum(StatusEnum.ACTIVE)
+                .status(AccountStatus.ACTIVE)
                 .build();
 
         return accountRepository.save(account);
@@ -323,6 +353,124 @@ public class EmployeeService {
                             "Ya existe un empleado registrado con el DNI " + dni
                     );
                 });
+    }
+
+    private EmployeeAssignmentEntity createAssignment(
+            EmployeeEntity employee,
+            BranchEntity branch,
+            PositionEntity position,
+            DepartmentEntity department,
+            LocalDate startDate
+    ) {
+        EmployeeAssignmentEntity assignment = new EmployeeAssignmentEntity();
+        assignment.setEmployee(employee);
+        assignment.setBranch(branch);
+        assignment.setPosition(position);
+        assignment.setDepartment(department);
+        assignment.setStartDate(startDate);
+        assignment.setEndDate(null);
+        assignment.setActive(true);
+        return assignment;
+    }
+
+    private void updateCurrentAssignment(
+            EmployeeEntity employee,
+            Long branchId,
+            Long positionId,
+            Long departmentId,
+            LocalDate startDate
+    ) {
+        EmployeeAssignmentEntity currentAssignment = findActiveAssignment(employee);
+
+        BranchEntity branch = branchId != null
+                ? findBranchById(branchId)
+                : currentAssignment != null ? currentAssignment.getBranch() : null;
+        PositionEntity position = positionId != null
+                ? findPositionById(positionId)
+                : currentAssignment != null ? currentAssignment.getPosition() : null;
+        DepartmentEntity department = departmentId != null
+                ? findDepartmentById(departmentId)
+                : currentAssignment != null ? currentAssignment.getDepartment() : null;
+
+        if (branch == null || position == null || department == null) {
+            throw new IllegalArgumentException("Debe indicar sucursal, puesto y departamento para la asignación laboral");
+        }
+
+        if (currentAssignment != null && isSameAssignment(currentAssignment, branch, position, department)) {
+            return;
+        }
+
+        LocalDate effectiveStartDate = startDate != null ? startDate : LocalDate.now();
+
+        closeActiveAssignments(employee, effectiveStartDate);
+
+        getAssignments(employee).add(createAssignment(
+                employee,
+                branch,
+                position,
+                department,
+                effectiveStartDate
+        ));
+    }
+
+    private EmployeeAssignmentEntity findActiveAssignment(EmployeeEntity employee) {
+        if (employee.getAssignments() == null) {
+            return null;
+        }
+
+        return employee.getAssignments().stream()
+                .filter(EmployeeAssignmentEntity::isActive)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void closeActiveAssignments(EmployeeEntity employee, LocalDate endDate) {
+        if (employee.getAssignments() == null) {
+            return;
+        }
+
+        LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
+
+        employee.getAssignments().stream()
+                .filter(EmployeeAssignmentEntity::isActive)
+                .forEach(assignment -> {
+                    assignment.setActive(false);
+                    assignment.setEndDate(effectiveEndDate);
+                });
+    }
+
+    private List<EmployeeAssignmentEntity> getAssignments(EmployeeEntity employee) {
+        if (employee.getAssignments() == null) {
+            employee.setAssignments(new ArrayList<>());
+        }
+
+        return employee.getAssignments();
+    }
+
+    private boolean isSameAssignment(
+            EmployeeAssignmentEntity currentAssignment,
+            BranchEntity branch,
+            PositionEntity position,
+            DepartmentEntity department
+    ) {
+        return Objects.equals(currentAssignment.getBranch().getId_branch(), branch.getId_branch())
+                && Objects.equals(currentAssignment.getPosition().getId_position(), position.getId_position())
+                && Objects.equals(currentAssignment.getDepartment().getId_department(), department.getId_department());
+    }
+
+    private BranchEntity findBranchById(Long branchId) {
+        return branchRepository.findById(branchId)
+                .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada", "Branch"));
+    }
+
+    private PositionEntity findPositionById(Long positionId) {
+        return positionRepository.findById(positionId)
+                .orElseThrow(() -> new EntityNotFoundException("Puesto no encontrado", "Position"));
+    }
+
+    private DepartmentEntity findDepartmentById(Long departmentId) {
+        return departamentRepository.findById(departmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Departamento no encontrado", "Department"));
     }
 
     private AccountEntity getCurrentAccount() {
@@ -382,6 +530,7 @@ public class EmployeeService {
             Hibernate.initialize(employee.getAssignments());
 
             employee.getAssignments().forEach(assignment -> {
+                Hibernate.initialize(assignment.getBranch());
                 Hibernate.initialize(assignment.getDepartment());
                 Hibernate.initialize(assignment.getPosition());
             });

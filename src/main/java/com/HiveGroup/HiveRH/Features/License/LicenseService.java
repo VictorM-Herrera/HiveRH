@@ -1,7 +1,7 @@
 package com.HiveGroup.HiveRH.Features.License;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Common.Utils.Enums.LicenseStatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AbsenceStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Common.Security.Config.SecurityAuthorizationService;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
@@ -58,6 +58,8 @@ public class LicenseService {
 
         license.setStatus(request.status());
         license.setPaid(request.isPaid());
+        license.setReviewComment(request.reviewComment());
+        license.setReviewedBy(request.status() == AbsenceStatus.PENDING ? null : getCurrentAccount());
 
         return toFullDTO(licenseRepository.save(license));
     }
@@ -72,7 +74,6 @@ public class LicenseService {
                 .startDate(license.startDate())
                 .endDate(license.endDate())
                 .motive(license.motive())
-                .description(license.description())
                 .build();
 
         if (license.idCertificates() != null) {
@@ -141,7 +142,7 @@ public class LicenseService {
         }
     }
 
-    private boolean filterByStatus(LicenseEntity license, LicenseStatusEnum status) {
+    private boolean filterByStatus(LicenseEntity license, AbsenceStatus status) {
         return status == null || license.getStatus() == status;
     }
 
@@ -158,6 +159,16 @@ public class LicenseService {
     }
 
     private EmployeeEntity getCurrentEmployee() {
+        AccountEntity account = getCurrentAccount();
+
+        if (account.getEmployee() == null) {
+            throw new EntityNotFoundException("Empleado no encontrado para la cuenta autenticada", "Employee");
+        }
+
+        return account.getEmployee();
+    }
+
+    private AccountEntity getCurrentAccount() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             throw new org.springframework.security.access.AccessDeniedException("No hay usuario autenticado");
@@ -167,11 +178,7 @@ public class LicenseService {
         AccountEntity account = accountRepository.findByUserOrEmail(username, username)
                 .orElseThrow(() -> new EntityNotFoundException("Cuenta no encontrada", "Account"));
 
-        if (account.getEmployee() == null) {
-            throw new EntityNotFoundException("Empleado no encontrado para la cuenta autenticada", "Employee");
-        }
-
-        return account.getEmployee();
+        return account;
     }
 
     private PageResponseDTO<LicenseDTO> toPageResponse(List<LicenseDTO> licenses, Pageable pageable) {
@@ -258,7 +265,8 @@ public class LicenseService {
                 .endDate(license.getEndDate())
                 .isPaid(license.isPaid())
                 .motive(license.getMotive())
-                .description(license.getDescription())
+                .reviewedByAccountId(license.getReviewedBy() != null ? license.getReviewedBy().getId_account() : null)
+                .reviewComment(license.getReviewComment())
                 .idCertificates(certificateService.getCertificateID(license.getCertificates()))
                 .dniEmployee(license.getEmployee().getDni())
                 .build();

@@ -22,9 +22,6 @@ public record RequestLicenseDTO(
         @Size(max = 100, message = "El motivo no puede superar los 100 caracteres")
         String motive,
 
-        @Size(max = 255, message = "La descripción no puede superar los 255 caracteres")
-        String description,
-
         @Size(max = 10, message = "No se pueden asociar más de 10 certificados")
         List<
                 @Positive(message = "El ID del certificado debe ser mayor que cero")

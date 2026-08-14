@@ -6,10 +6,11 @@ Account {
 varchar user
 varchar email
 varchar password
+varchar status
 }
 
     Rol {
-        varchar Type "Admin, RRHH"
+        varchar Type "Admin, STAFF"
     }
 
     Branch {
@@ -56,34 +57,39 @@ varchar password
         varchar status
     }
 
-    Vacation {
-        date request_date
-        boolean accepted
+    EmployeeAssignment {
         date start_date
         date end_date
+        boolean active
+    }
+
+    Vacation {
+        date request_date
+        date start_date
+        date end_date
+        varchar status
+        bigint reviewed_by_account_id
+        varchar review_comment
     }
 
     License {
         date request_date
-        boolean accepted
         date start_date
         date end_date
-        boolean paid
         varchar motive
-        varchar description
+        varchar status
+        boolean isPaid
+        bigint reviewed_by_account_id
+        varchar review_comment
     }
 
     Certificate {
         varchar file
         varchar description
+        date upload_date
     }
 
-    Complaint {
-        varchar file
-        varchar description
-    }
-
-    %% Relaciones de Rol (Admin, RRHH)
+    %% Relaciones de Rol (Admin, STAFF)
     Rol ||--o{ Account : "TIENE"
     Rol ||--o{ Branch : "CREA / ELIMINA"
     Rol ||--o{ Department : "CREA / ELIMINA"
@@ -95,13 +101,15 @@ varchar password
 
     %% Relaciones de Employee
     Employee ||--|| Account : "TIENE"
-    Branch ||--o{ Employee : "TIENE"
-    Department ||--o{ Employee : "PERTENECE"
-    Position ||--o{ Employee : "TIENE"
+    Employee ||--o{ EmployeeAssignment : "TIENE HISTORIAL"
+    Branch ||--o{ EmployeeAssignment : "ASIGNA"
+    Department ||--o{ EmployeeAssignment : "ASIGNA"
+    Position ||--o{ EmployeeAssignment : "ASIGNA"
     Employee ||--o{ Vacation : "PIDE / CONSULTA / ELIMINA"
     Employee ||--o{ License : "PIDE / CONSULTA / ELIMINA"
-    Employee ||--o{ Complaint : "REALIZA"
     Employee ||--o{ Payroll : "TIENE"
+    Account ||--o{ Vacation : "REVISA"
+    Account ||--o{ License : "REVISA"
 
     %% Otras Relaciones
     License ||--o| Certificate : "Tiene"

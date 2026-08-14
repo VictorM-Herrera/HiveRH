@@ -1,7 +1,7 @@
 package com.HiveGroup.HiveRH.Features.Payroll;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeRepository;
@@ -177,7 +177,7 @@ public class PayrollService {
     // Validar si el empleado puede recibir liquidación
     private void validateEmployeeCanReceivePayroll(EmployeeEntity employee, LocalDate payrollDate) {
 
-        if (employee.getStatus() != StatusEnum.ACTIVE) {
+        if (employee.getStatus() != EmployeeStatus.ACTIVE) {
             throw new IllegalArgumentException("No se puede liquidar sueldo a un empleado que no está activo");
         }
 

@@ -1,10 +1,13 @@
 package com.HiveGroup.HiveRH.Features.Vacation;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Common.Utils.Enums.StatusEnum;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AbsenceStatus;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Security.Config.SecurityAuthorizationService;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Common.Utils.TextSearchUtils;
+import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
+import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeEntity;
 import com.HiveGroup.HiveRH.Features.Employee.EmployeeRepository;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationFilterDTO;
@@ -14,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -25,6 +29,7 @@ public class VacationService {
 
     private final VacationRepository vacationRepository;
     private final EmployeeRepository employeeRepository;
+    private final AccountRepository accountRepository;
     private final VacationMapper vacationMapper;
     private final SecurityAuthorizationService securityAuthorizationService;
 
@@ -56,6 +61,9 @@ public class VacationService {
         );
 
         VacationEntity vacation = vacationMapper.toEntity(request, employee);
+        vacation.setStatus(AbsenceStatus.PENDING);
+        vacation.setReviewedBy(null);
+        vacation.setReviewComment(null);
 
         VacationEntity savedVacation = vacationRepository.save(vacation);
 
@@ -83,7 +91,7 @@ public class VacationService {
 
         List<VacationResponse> filteredVacations = vacationRepository.findAll()
                 .stream()
-                .filter(vacation -> filterByAccepted(vacation, activeFilters.accepted()))
+                .filter(vacation -> filterByStatus(vacation, activeFilters.status()))
                 .filter(vacation -> filterByDateRange(vacation, activeFilters))
                 .filter(vacation -> filterByEmployeeDni(vacation, activeFilters.dniEmployee()))
                 .filter(vacation -> filterByEmployeeFullName(vacation, activeFilters.fullName()))
@@ -124,10 +132,9 @@ public class VacationService {
                         : LocalDate.now()
         );
 
-        vacation.setAccepted(request.accepted());
+        applyReviewData(vacation, request);
         vacation.setStartDate(request.startDate());
         vacation.setEndDate(request.endDate());
-        vacation.setPaid(request.paid());
         vacation.setEmployee(employee);
 
         VacationEntity updatedVacation = vacationRepository.save(vacation);
@@ -191,7 +198,7 @@ public class VacationService {
     // Validar si el empleado puede tener vacaciones
     private void validateEmployeeCanHaveVacation(EmployeeEntity employee, LocalDate startDate) {
 
-        if (employee.getStatus() != StatusEnum.ACTIVE) {
+        if (employee.getStatus() != EmployeeStatus.ACTIVE) {
             throw new IllegalArgumentException("No se pueden registrar vacaciones para un empleado que no está activo");
         }
 
@@ -262,9 +269,9 @@ public class VacationService {
         }
     }
 
-    private boolean filterByAccepted(VacationEntity vacation, Boolean accepted) {
+    private boolean filterByStatus(VacationEntity vacation, AbsenceStatus status) {
 
-        return accepted == null || vacation.isAccepted() == accepted;
+        return status == null || vacation.getStatus() == status;
     }
 
     private boolean filterByDateRange(VacationEntity vacation, VacationFilterDTO filters) {
@@ -291,6 +298,26 @@ public class VacationService {
                 vacation.getEmployee().getLastName(),
                 fullName
         );
+    }
+
+    private void applyReviewData(VacationEntity vacation, VacationRequest request) {
+        if (request.status() != null) {
+            vacation.setStatus(request.status());
+            vacation.setReviewedBy(request.status() == AbsenceStatus.PENDING ? null : getCurrentAccount());
+        }
+
+        vacation.setReviewComment(request.reviewComment());
+    }
+
+    private AccountEntity getCurrentAccount() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new org.springframework.security.access.AccessDeniedException("No hay usuario autenticado");
+        }
+
+        String username = authentication.getName();
+        return accountRepository.findByUserOrEmail(username, username)
+                .orElseThrow(() -> new EntityNotFoundException("Cuenta no encontrada", "Account"));
     }
 
     private int countBusinessDaysBetween(LocalDate fromExclusive, LocalDate toInclusive) {

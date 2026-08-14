@@ -34,7 +34,7 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/register")
-    @Operation(summary = "Register account", description = "Creates a user account. Requires an ADMIN or RRHH token. The password is stored encrypted and the selected role defines the account permissions.")
+    @Operation(summary = "Register account", description = "Creates a user account. Requires an ADMIN or STAFF token. The password is stored encrypted and the selected role defines the account permissions.")
     public ResponseEntity<ResponseAccountDTO> registerUser(@Valid @RequestBody NewAccountDTO newAccountDTO) {
         return new ResponseEntity<>(accountService.save(newAccountDTO), HttpStatus.CREATED);
     }
