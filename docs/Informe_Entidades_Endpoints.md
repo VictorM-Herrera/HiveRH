@@ -4,7 +4,7 @@ Este informe describe el recorrido completo del sistema HiveRH, desde la autenti
 
 La idea es que sirva como guía de defensa, documentación de endpoints y orden recomendado para completar una colección de Postman.
 
-El proyecto expone una API RESTful orientada a la gestión de recursos humanos. A través de esta API se pueden administrar cuentas, empleados, estructura organizacional, licencias, certificados, vacaciones, variaciones salariales y liquidaciones de sueldo.
+El proyecto expone una API RESTful orientada a la gestión de recursos humanos. A través de esta API se pueden administrar cuentas, empleados, estructura organizacional, cronogramas laborales, solicitudes de jornada, licencias, certificados, vacaciones, períodos, conceptos y liquidaciones de sueldo.
 
 ---
 
@@ -48,13 +48,13 @@ Las cuentas implementan UserDetails, por lo que Spring Security puede obtener el
 
 Es el rol con mayor nivel de permisos dentro del sistema.
 
-Puede crear sucursales, departamentos, puestos, variaciones, empleados, modificar roles y acceder a recursos administrativos.
+Puede crear sucursales, departamentos, puestos, períodos y conceptos de liquidación, empleados, modificar roles y acceder a recursos administrativos.
 
 #### STAFF
 
 Es el rol operativo del área de Recursos Humanos.
 
-Puede gestionar empleados, licencias, vacaciones y consultar información sensible según la configuración de seguridad del sistema.
+Puede gestionar empleados, cronogramas laborales, solicitudes de jornada, licencias, vacaciones, liquidaciones y consultar información sensible según la configuración de seguridad del sistema.
 
 #### EMPLOYEE
 
@@ -80,7 +80,7 @@ Se utiliza para validar el acceso a determinados recursos, como empleados, licen
 
 Los endpoints que no tienen una regla específica igualmente requieren un token válido.
 
-Algunos módulos, como payroll y vacation, quedan protegidos por autenticación general, aunque no necesariamente diferenciados por rol.
+Los módulos operativos separan permisos por rol: ADMIN y STAFF gestionan recursos administrativos, mientras que EMPLOYEE solo accede a recursos propios cuando corresponde.
 
 ---
 
@@ -136,21 +136,49 @@ Esos datos no se guardan como relación directa del empleado, sino como su prime
 
 Además, al registrar un nuevo empleado se genera automáticamente una cuenta con rol EMPLOYEE por defecto.
 
-### Variation
+### WorkSchedule
 
-Gestiona los conceptos salariales que se utilizan en las liquidaciones.
+Representa el cronograma laboral asignado a un empleado para una fecha concreta.
 
-Una variación con total positivo suma al sueldo del empleado, mientras que una variación con total negativo descuenta del sueldo.
+Permite registrar días laborales, días libres, feriados y horas extra. Los cronogramas son gestionados por ADMIN o STAFF y el empleado solo puede consultar sus propios cronogramas activos.
 
-No se acepta una variación con total igual a cero.
+El sistema evita que un empleado tenga dos cronogramas activos superpuestos en la misma fecha y rango horario. Cuando un cronograma deja de aplicar no se borra físicamente, sino que se marca como CANCELLED.
+
+### WorkRequest
+
+Representa solicitudes puntuales del empleado relacionadas con su jornada laboral.
+
+Permite pedir un día libre, solicitar cambio de turno, avisar entrada tarde, pedir salida anticipada, solicitar horas extra o pedir un día compensatorio.
+
+Las solicitudes nacen PENDING y quedan sujetas a revisión por ADMIN o STAFF. Al aprobar o rechazar se registra el usuario administrativo que revisó la solicitud y un comentario opcional. Si la solicitud se aprueba, el sistema genera o modifica el WorkSchedule correspondiente.
+
+El sistema evita que un empleado tenga dos solicitudes PENDING del mismo tipo para la misma fecha objetivo.
+
+### PayrollPeriod
+
+Representa un período mensual de liquidación, identificado por mes y año.
+
+El período nace OPEN y puede cerrarse cuando no quedan liquidaciones en estado DRAFT.
+
+### PayrollConcept
+
+Define conceptos reutilizables de liquidación, como bonos, horas extra o descuentos por adelanto.
+
+Cada concepto indica si suma al sueldo mediante ADDITION o si descuenta mediante DEDUCTION.
+
+### PayrollDetail
+
+Registra cuánto se aplicó de un concepto en una liquidación específica.
+
+El detalle guarda importe y descripción opcional, y es la base para calcular sumas y descuentos.
 
 ### Payroll
 
-Genera las liquidaciones de sueldo de los empleados.
+Genera liquidaciones mensuales de sueldo por empleado y período.
 
-El sistema calcula el total tomando como base el sueldo del empleado y aplicando las variaciones correspondientes.
+El sistema guarda baseSalarySnapshot y calcula el total como baseSalarySnapshot + totalAdditions - totalDeductions.
 
-También valida que el empleado esté activo, que tenga un sueldo válido y que no exista más de una liquidación para el mismo empleado dentro del mismo mes.
+Las liquidaciones nacen DRAFT, pueden actualizarse mientras el período esté abierto y luego se confirman o anulan.
 
 ### Vacation
 
@@ -218,26 +246,43 @@ Utiliza multipart/form-data para permitir la carga de archivos desde el cliente 
 
 ---
 
-## 5. Variaciones de sueldo
+## 5. Jornada laboral
 
-- Antes de liquidar sueldos, se cargan variaciones con /api/variations.
-- Una variación representa un concepto que modifica la liquidación: bono, premio, descuento, adelanto, penalización, etc.
-- Si total es positivo suma al sueldo base; si total es negativo descuenta.
-- El sistema no acepta variaciones con total igual a cero.
-
----
-
-## 6. Payroll / liquidación de sueldo
-
-- Para crear una liquidación se llama a POST /api/payrolls con payrollDate, dniEmployee y una lista opcional de idVariations.
-- El sistema busca el empleado, valida que esté ACTIVE, que tenga sueldo base válido y que la fecha de liquidación no sea anterior a su contratación.
-- También valida que ese empleado no tenga otra liquidación en el mismo mes.
-- El total final se calcula como sueldo base + suma de variaciones.
-- No se puede repetir una misma variación dentro de la misma liquidación y el total final no puede quedar negativo.
+- ADMIN o STAFF crean cronogramas laborales mediante /api/work-schedules indicando el DNI del empleado, fecha, tipo y horario cuando corresponde.
+- El tipo WORKDAY o EXTRA_HOURS requiere startTime y endTime; DAY_OFF y HOLIDAY representan bloques de día completo sin rango horario.
+- El empleado autenticado consulta únicamente sus cronogramas activos desde /api/work-schedules/me.
+- El sistema valida que no existan cronogramas activos superpuestos para el mismo empleado, fecha y rango horario.
+- El empleado crea solicitudes puntuales desde /api/work-requests/me. Estas solicitudes no reemplazan vacaciones ni licencias largas, sino pedidos diarios o de horario.
+- Las solicitudes nacen PENDING y el empleado solo puede cancelarlas mientras sigan en ese estado.
+- ADMIN o STAFF revisan solicitudes desde /api/work-requests y pueden aprobarlas o rechazarlas.
+- Al aprobar una solicitud, el sistema registra reviewed_by_account_id, reviewComment y genera o ajusta el cronograma laboral asociado.
 
 ---
 
-## 7. Vacaciones
+## 6. Conceptos y períodos de liquidación
+
+- Antes de liquidar sueldos, ADMIN o STAFF crean un período mensual con /api/payroll-periods.
+- El período representa un mes y año concreto, por ejemplo 8/2026, y nace en estado OPEN.
+- También se cargan conceptos reutilizables con /api/payroll-concepts.
+- Un concepto ADDITION suma al sueldo y un concepto DEDUCTION descuenta del sueldo.
+- Los conceptos se desactivan de forma lógica para conservar el historial de liquidaciones ya generadas.
+
+---
+
+## 7. Payroll / liquidación de sueldo
+
+- Para crear una liquidación se llama a POST /api/payrolls con dniEmployee, periodId y una lista opcional de detalles.
+- El sistema busca el empleado, valida que esté ACTIVE, que tenga sueldo base válido y que el período esté abierto.
+- También valida que ese empleado no tenga otra liquidación activa para el mismo período.
+- La liquidación nace DRAFT y guarda baseSalarySnapshot con el sueldo base del momento.
+- Cada detalle referencia un PayrollConcept y un importe positivo.
+- El total final se calcula como baseSalarySnapshot + totalAdditions - totalDeductions.
+- Solo se pueden modificar liquidaciones DRAFT.
+- ADMIN y STAFF pueden confirmar o anular liquidaciones. El empleado solo puede consultar sus propias liquidaciones CONFIRMED desde /api/payrolls/me.
+
+---
+
+## 8. Vacaciones
 
 - Las vacaciones se registran con /api/vacations y se asocian a un empleado por DNI.
 - El sistema valida empleado activo, fechas obligatorias, fecha final posterior a inicio, que la solicitud no sea posterior al inicio y que exista una anticipación mínima de 5 días hábiles.
@@ -246,7 +291,7 @@ Utiliza multipart/form-data para permitir la carga de archivos desde el cliente 
 
 ---
 
-## 8. Licencias y certificados
+## 9. Licencias y certificados
 
 - Las licencias se registran con /api/licenses y representan ausencias justificadas, por ejemplo licencia médica.
 - Las licencias nuevas se crean para el empleado autenticado, quedan inicialmente en estado PENDING y luego STAFF o ADMIN pueden revisarlas con estado APPROVED, REJECTED o CANCELLED.
@@ -271,6 +316,8 @@ La página inicial es 0. El parámetro sort es opcional y permite ordenar sin ca
 Endpoints paginados actuales:
 
 - GET /api/employees
+- GET /api/work-schedules
+- GET /api/work-requests
 - GET /api/licenses
 - GET /api/payrolls
 - GET /api/vacations
@@ -313,11 +360,11 @@ Permite que el usuario autenticado cambie su propia contraseña.
 
 La nueva contraseña se guarda encriptada.
 
-### PATCH /api/accounts/{id}/role
+### PATCH /api/accounts/{identifier}/rol
 
 Permite que un usuario con rol ADMIN cambie el rol de otra cuenta.
 
-Se utiliza para modificar permisos de acceso dentro del sistema.
+Se utiliza para modificar permisos de acceso dentro del sistema. El identifier puede ser usuario, email o DNI cuando la cuenta automática del empleado usa el DNI como usuario.
 
 ---
 
@@ -439,61 +486,169 @@ El empleado no se elimina físicamente, sino que su estado cambia a TERMINATED y
 
 ---
 
-## Variation
+## WorkSchedule
 
-### GET /api/variations
+### GET /api/work-schedules/me
 
-Lista las variaciones salariales registradas.
+Devuelve los cronogramas activos del empleado autenticado.
 
-Permite aplicar filtros según los parámetros disponibles.
+Puede recibir from y to como filtros opcionales por rango de fechas.
 
-### GET /api/variations/{id}
+### GET /api/work-schedules
 
-Consulta una variación salarial específica por su ID.
+Lista cronogramas laborales en formato paginado.
 
-### POST /api/variations
+Permite filtrar por dniEmployee, departmentId, branchId, from, to, type y status.
 
-Crea una nueva variación salarial.
+### GET /api/work-schedules/{id}
 
-Estas variaciones pueden representar sumas o descuentos en una liquidación.
+Consulta un cronograma laboral específico por ID.
 
-### PATCH /api/variations/{id}
+### POST /api/work-schedules
 
-Actualiza parcialmente una variación salarial.
+Crea un cronograma laboral activo para un empleado identificado por DNI.
 
-Solo se modifican los campos enviados.
+Solo ADMIN o STAFF pueden crear cronogramas.
 
-### PUT /api/variations/{id}
+### PATCH /api/work-schedules/{id}
 
-Reemplaza los datos de una variación salarial existente.
+Actualiza parcialmente un cronograma activo.
 
-### DELETE /api/variations/{id}
+El sistema vuelve a validar fechas, horarios y superposición antes de guardar.
 
-Elimina una variación salarial.
+### PATCH /api/work-schedules/{id}/cancel
+
+Cancela un cronograma laboral sin borrarlo físicamente.
+
+---
+
+## WorkRequest
+
+### POST /api/work-requests/me
+
+Crea una solicitud de jornada para el empleado autenticado.
+
+La solicitud nace en estado PENDING y no recibe DNI ni ID de empleado en el body.
+
+### GET /api/work-requests/me
+
+Lista las solicitudes de jornada del empleado autenticado.
+
+Puede filtrar por from, to, requestType y status.
+
+### GET /api/work-requests/me/{id}
+
+Consulta una solicitud propia por ID.
+
+Si la solicitud pertenece a otro empleado, el acceso se rechaza.
+
+### PATCH /api/work-requests/me/{id}/cancel
+
+Cancela una solicitud propia solo si todavía está PENDING.
+
+### GET /api/work-requests
+
+Lista solicitudes de jornada en formato paginado para ADMIN o STAFF.
+
+Permite filtrar por dniEmployee, departmentId, branchId, from, to, requestType y status.
+
+### GET /api/work-requests/{id}
+
+Consulta una solicitud de jornada específica por ID.
+
+### PATCH /api/work-requests/{id}/approve
+
+Aprueba una solicitud PENDING, registra la cuenta revisora y genera o ajusta el cronograma laboral asociado.
+
+### PATCH /api/work-requests/{id}/reject
+
+Rechaza una solicitud PENDING y registra la cuenta revisora.
+
+---
+
+## PayrollPeriod
+
+### GET /api/payroll-periods
+
+Lista períodos de liquidación. Permite filtrar por mes, año y estado.
+
+### GET /api/payroll-periods/{id}
+
+Consulta un período de liquidación específico.
+
+### POST /api/payroll-periods
+
+Crea un período mensual en estado OPEN.
+
+### PATCH /api/payroll-periods/{id}/close
+
+Cierra un período OPEN si no tiene liquidaciones DRAFT.
+
+---
+
+## PayrollConcept
+
+### GET /api/payroll-concepts
+
+Lista conceptos de liquidación. Permite filtrar por nombre, tipo y estado activo.
+
+### GET /api/payroll-concepts/{id}
+
+Consulta un concepto de liquidación específico.
+
+### POST /api/payroll-concepts
+
+Crea un concepto reutilizable de tipo ADDITION o DEDUCTION.
+
+### PATCH /api/payroll-concepts/{id}
+
+Actualiza parcialmente un concepto.
+
+### DELETE /api/payroll-concepts/{id}
+
+Desactiva un concepto sin borrar detalles históricos.
 
 ---
 
 ## Payroll
 
+### GET /api/payrolls/me
+
+Devuelve las liquidaciones CONFIRMED del empleado autenticado.
+
+Puede recibir year como filtro opcional.
+
+### GET /api/payrolls/me/{id}
+
+Devuelve el detalle de una liquidación propia si está CONFIRMED.
+
 ### GET /api/payrolls
 
 Lista las liquidaciones de sueldo registradas en el sistema en formato paginado.
 
-### GET /api/payrolls/employee/{dni_employee}
+Permite filtrar por periodId, mes, año, estado y DNI del empleado.
 
-Consulta liquidaciones de un empleado por DNI, con filtros opcionales de fecha.
+### GET /api/payrolls/{id}
+
+Consulta una liquidación por ID con sus detalles.
 
 ### POST /api/payrolls
 
-Crea una nueva liquidación de sueldo.
+Crea una liquidación DRAFT.
 
-El sistema calcula el total tomando el sueldo base del empleado y aplicando las variaciones salariales correspondientes.
+El sistema toma el sueldo base actual como baseSalarySnapshot y calcula totales desde los detalles.
 
-### DELETE /api/payrolls/{id}
+### PATCH /api/payrolls/{id}
 
-Elimina una liquidación de sueldo.
+Actualiza una liquidación DRAFT.
 
-Luego de eliminarla, devuelve los datos de la liquidación eliminada.
+### PATCH /api/payrolls/{id}/confirm
+
+Confirma una liquidación DRAFT.
+
+### PATCH /api/payrolls/{id}/cancel
+
+Anula una liquidación mientras su período siga abierto.
 
 ---
 
@@ -781,69 +936,140 @@ Body:
 
 ---
 
-## Crear variación positiva
+## Crear cronograma laboral
 
 Método: POST
 
-Endpoint: /api/variations
+Endpoint: /api/work-schedules
 
-Permite crear una variación salarial positiva.
-
-Este tipo de variación suma al sueldo del empleado.
+Permite que ADMIN o STAFF creen un cronograma laboral para un empleado identificado por DNI.
 
 Body:
 
 ```json
 {
-  "title": "Bono por presentismo",
+  "dniEmployee": "40111222",
+  "workDate": "2026-08-17",
+  "startTime": "08:00:00",
+  "endTime": "14:00:00",
+  "type": "WORKDAY",
+  "note": "Turno mañana"
+}
+```
+
+---
+
+## Crear solicitud de jornada propia
+
+Método: POST
+
+Endpoint: /api/work-requests/me
+
+Permite que el empleado autenticado cree una solicitud puntual de jornada. No se envía DNI porque el sistema usa la cuenta autenticada.
+
+Body:
+
+```json
+{
+  "requestType": "SHIFT_CHANGE",
+  "targetDate": "2026-08-17",
+  "startTime": "14:00:00",
+  "endTime": "20:00:00",
+  "reason": "Cambio de turno por trámite personal",
+  "compensationDescription": "Compensa horas en el turno tarde"
+}
+```
+
+---
+
+## Aprobar solicitud de jornada
+
+Método: PATCH
+
+Endpoint: /api/work-requests/1/approve
+
+Permite que ADMIN o STAFF aprueben una solicitud pendiente. Al aprobar, se registra la cuenta revisora y se genera o modifica el cronograma laboral correspondiente.
+
+Body:
+
+```json
+{
+  "reviewComment": "Cambio aprobado para la fecha solicitada"
+}
+```
+
+---
+
+## Crear período de liquidación
+
+Método: POST
+
+Endpoint: /api/payroll-periods
+
+Permite crear un período mensual de liquidación.
+
+El período nace en estado OPEN.
+
+Body:
+
+```json
+{
+  "month": 6,
+  "year": 2026
+}
+```
+
+---
+
+## Crear concepto de liquidación
+
+Método: POST
+
+Endpoint: /api/payroll-concepts
+
+Permite crear un concepto reutilizable para las liquidaciones.
+
+El tipo ADDITION suma al sueldo y DEDUCTION descuenta.
+
+Body:
+
+```json
+{
+  "name": "Bono por presentismo",
   "description": "Bono mensual por asistencia perfecta",
-  "total": 50000.0
+  "type": "ADDITION"
 }
 ```
 
 ---
 
-## Crear variación negativa
-
-Método: POST
-
-Endpoint: /api/variations
-
-Permite crear una variación salarial negativa.
-
-Este tipo de variación descuenta del sueldo del empleado.
-
-Body:
-
-```json
-{
-  "title": "Descuento por adelanto",
-  "description": "Descuento aplicado por adelanto de sueldo",
-  "total": -25000.0
-}
-```
-
----
-
-## Crear liquidación
+## Crear liquidación en borrador
 
 Método: POST
 
 Endpoint: /api/payrolls
 
-Permite crear una liquidación de sueldo.
+Permite crear una liquidación de sueldo en estado DRAFT.
 
-El sistema calcula el total usando el sueldo base del empleado y las variaciones indicadas.
+El sistema guarda el sueldo base como snapshot y calcula los totales desde los detalles.
 
 Body:
 
 ```json
 {
-  "payrollDate": "2026-06-30",
   "dniEmployee": "40111222",
-  "idVariations": [
-    1,
-    2
+  "periodId": 1,
+  "details": [
+    {
+      "payrollConceptId": 1,
+      "amount": 50000.0,
+      "description": "Bono mensual por asistencia perfecta"
+    },
+    {
+      "payrollConceptId": 2,
+      "amount": 25000.0,
+      "description": "Descuento aplicado por adelanto de sueldo"
+    }
   ]
 }
 ```
@@ -981,9 +1207,9 @@ Body:
 
 Método: PATCH
 
-Endpoint: /api/accounts/2/role
+Endpoint: /api/accounts/40111222/rol
 
-Permite que un usuario ADMIN cambie el rol de otra cuenta.
+Permite que un usuario ADMIN o STAFF cambie el rol de otra cuenta, con la restricción de que solo ADMIN puede asignar el rol ADMIN.
 
 Body:
 

@@ -2,7 +2,7 @@
 
 [Version en espanol](README.md)
 
-HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, payroll records, leaves, vacations, and certificates.
+HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, work schedules, daily work requests, payroll records, leaves, vacations, and certificates.
 
 The project is designed as an academic MVP. The main goal is to provide clear business rules, JWT authentication, role-based permissions, and endpoints that are easy to test from Postman or Swagger.
 
@@ -41,7 +41,7 @@ The application reads its configuration from `src/main/resources/application.yam
 | `DEMO_CLEANUP_DAILY_CRON` | Daily cleanup cron expression | `0 0 4 * * *` |
 | `DEMO_CLEANUP_ZONE` | Cron time zone | `UTC` |
 | `DEMO_CLEANUP_MAX_RECORDS` | Maximum record count before cleanup runs | `5000` |
-| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Also deletes branches, departments, positions, and variations | `true` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Also deletes branches, departments, positions, and payroll concepts | `true` |
 | `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Comma-separated users that are never deleted | `admin` |
 
 Example:
@@ -136,7 +136,7 @@ Authorization: Bearer <token>
 Main roles:
 
 - `ADMIN`: manages the whole system.
-- `STAFF`: manages employees, leaves, vacations, and payroll records.
+- `STAFF`: manages employees, work schedules, daily work requests, leaves, vacations, and payroll records.
 - `EMPLOYEE`: can view and operate on their own resources when the business rule allows it.
 
 ## Swagger
@@ -172,7 +172,10 @@ The complete endpoint details are available in `docs/Informe_Entidades_Endpoints
 | Branches | `/api/branches` |
 | Departments | `/api/departments` |
 | Positions | `/api/positions` |
-| Variations | `/api/variations` |
+| Work Schedules | `/api/work-schedules` |
+| Work Requests | `/api/work-requests` |
+| Payroll Periods | `/api/payroll-periods` |
+| Payroll Concepts | `/api/payroll-concepts` |
 | Payrolls | `/api/payrolls` |
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
@@ -184,8 +187,11 @@ Examples:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
+GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
+GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
 GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
-GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+GET /api/payrolls?periodId=1&page=0&size=10
+GET /api/payrolls/me?year=2026
 ```
 
 ## Pagination
@@ -205,6 +211,8 @@ Paginated endpoints:
 | Module | Endpoint |
 |---|---|
 | Employees | `GET /api/employees` |
+| Work Schedules | `GET /api/work-schedules` |
+| Work Requests | `GET /api/work-requests` |
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
@@ -213,6 +221,8 @@ Examples:
 
 ```http
 GET /api/employees?page=0&size=10
+GET /api/work-schedules?branchId=1&from=2026-08-01&to=2026-08-31&page=0&size=10
+GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
@@ -222,8 +232,15 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 
 - An employee cannot view another employee's payroll records.
 - `STAFF` and `ADMIN` can view any employee payroll records.
-- Only `STAFF` and `ADMIN` can create, update, or delete payroll records.
-- Two payroll records cannot be created for the same employee in the same month.
+- Only `STAFF` and `ADMIN` can create, update, confirm, or cancel payroll records.
+- Employees can only view their own confirmed payroll records.
+- Two active payroll records cannot be created for the same employee in the same period.
+- Employees can only view their own active work schedules.
+- Employees can create and view their own daily work requests, and can cancel them only while they are PENDING.
+- `STAFF` and `ADMIN` can create, update, or cancel work schedules without physically deleting records.
+- `STAFF` and `ADMIN` can approve or reject daily work requests; approval records the reviewer and updates the work schedule.
+- Two active work schedules cannot overlap for the same employee, date, and time range.
+- Two PENDING work requests of the same type cannot exist for the same employee and target date.
 - Employees can delete their own leave or vacation requests only if they are still PENDING.
 - `STAFF` does not delete leave or vacation requests; it manages, approves, or rejects them.
 - `ADMIN` can manage all resources.

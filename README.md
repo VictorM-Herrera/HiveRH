@@ -2,7 +2,7 @@
 
 [English version](README.en.md)
 
-HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones y certificados.
+HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, cronogramas laborales, solicitudes de jornada, liquidaciones de sueldo, licencias, vacaciones y certificados.
 
 El proyecto esta planteado como un MVP academico: el foco esta en tener reglas de negocio claras, autenticacion con JWT, permisos por rol y endpoints faciles de probar desde Postman o Swagger.
 
@@ -41,7 +41,7 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `DEMO_CLEANUP_DAILY_CRON` | Cron diario de limpieza | `0 0 4 * * *` |
 | `DEMO_CLEANUP_ZONE` | Zona horaria del cron | `UTC` |
 | `DEMO_CLEANUP_MAX_RECORDS` | Cantidad maxima de registros antes de limpiar | `5000` |
-| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Tambien borra sucursales, departamentos, puestos y variaciones | `true` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Tambien borra sucursales, departamentos, puestos y conceptos de liquidacion | `true` |
 | `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Usuarios que nunca se borran, separados por coma | `admin` |
 
 Ejemplo:
@@ -136,7 +136,7 @@ Authorization: Bearer <token>
 Roles principales:
 
 - `ADMIN`: administra todo el sistema.
-- `STAFF`: gestiona empleados, licencias, vacaciones y liquidaciones.
+- `STAFF`: gestiona empleados, cronogramas laborales, solicitudes de jornada, licencias, vacaciones y liquidaciones.
 - `EMPLOYEE`: consulta y opera sobre recursos propios cuando la regla de negocio lo permite.
 
 ## Swagger
@@ -172,7 +172,10 @@ El detalle completo de endpoints esta en `docs/Informe_Entidades_Endpoints.md`. 
 | Branches | `/api/branches` |
 | Departments | `/api/departments` |
 | Positions | `/api/positions` |
-| Variations | `/api/variations` |
+| Work Schedules | `/api/work-schedules` |
+| Work Requests | `/api/work-requests` |
+| Payroll Periods | `/api/payroll-periods` |
+| Payroll Concepts | `/api/payroll-concepts` |
 | Payrolls | `/api/payrolls` |
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
@@ -184,8 +187,11 @@ Ejemplos:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
+GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
+GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
 GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
-GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+GET /api/payrolls?periodId=1&page=0&size=10
+GET /api/payrolls/me?year=2026
 ```
 
 ## Paginacion
@@ -205,6 +211,8 @@ Endpoints con paginacion:
 | Modulo | Endpoint |
 |---|---|
 | Employees | `GET /api/employees` |
+| Work Schedules | `GET /api/work-schedules` |
+| Work Requests | `GET /api/work-requests` |
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
@@ -213,6 +221,8 @@ Ejemplos:
 
 ```http
 GET /api/employees?page=0&size=10
+GET /api/work-schedules?branchId=1&from=2026-08-01&to=2026-08-31&page=0&size=10
+GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
@@ -222,8 +232,15 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 
 - Un empleado no puede consultar liquidaciones de otro empleado.
 - STAFF y ADMIN pueden consultar liquidaciones de cualquier empleado.
-- Solo STAFF y ADMIN pueden cargar, modificar o borrar liquidaciones.
-- No se permite cargar dos liquidaciones para el mismo empleado en el mismo mes.
+- Solo STAFF y ADMIN pueden cargar, modificar, confirmar o anular liquidaciones.
+- El empleado solo puede consultar sus propias liquidaciones confirmadas.
+- No se permite cargar dos liquidaciones activas para el mismo empleado en el mismo periodo.
+- El empleado solo puede consultar su propio cronograma laboral activo.
+- El empleado puede crear y consultar sus propias solicitudes de jornada, y cancelarlas solo si siguen PENDING.
+- STAFF y ADMIN pueden crear, modificar o cancelar cronogramas laborales sin borrar registros fisicos.
+- STAFF y ADMIN pueden aprobar o rechazar solicitudes de jornada; al aprobar se registra el revisor y se actualiza el cronograma laboral.
+- No se permiten cronogramas activos superpuestos para el mismo empleado, fecha y rango horario.
+- No se permiten dos solicitudes PENDING del mismo tipo para el mismo empleado y fecha objetivo.
 - El empleado puede eliminar sus propias solicitudes de licencia o vacaciones solo si siguen en estado PENDING.
 - STAFF no elimina solicitudes de licencia/vacaciones: las gestiona, aprueba o rechaza.
 - ADMIN puede administrar todos los recursos.

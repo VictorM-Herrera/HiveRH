@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/licenses")
 @AllArgsConstructor
 @Validated
-@Tag(name = "10 Licenses", description = "Employee licenses and approval status.")
+@Tag(name = "13 Licenses", description = "Employee licenses and approval status.")
 public class LicenseController {
     LicenseService licenseService;
 
@@ -53,7 +53,8 @@ public class LicenseController {
     }
 
     @PostMapping
-    @Operation(summary = "Create license", description = "Creates a license associated with the authenticated employee and can link existing certificates.")
+    @PreAuthorize("@securityAuthorizationService.hasLinkedEmployee()")
+    @Operation(summary = "Create license", description = "Creates a license associated with the employee linked to the authenticated account and can link existing certificates.")
     public ResponseEntity<LicenseDTO> postLicense(@Valid @RequestBody RequestLicenseDTO license) {
         return ResponseEntity.status(HttpStatus.CREATED).body(licenseService.createLicense(license));
     }

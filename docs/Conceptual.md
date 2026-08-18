@@ -20,16 +20,33 @@ varchar status
         boolean active
     }
 
-    Variation {
-        varchar name
-        varchar description
-        decimal total
-        boolean fixed
+    PayrollPeriod {
+        int month
+        int year
+        varchar status
+        datetime created_at
+        datetime closed_at
     }
 
     Payroll {
-        decimal total
-        date payroll_date
+        decimal base_salary_snapshot
+        decimal total_additions
+        decimal total_deductions
+        varchar status
+        datetime created_at
+        datetime confirmed_at
+    }
+
+    PayrollConcept {
+        varchar name
+        varchar description
+        varchar type
+        boolean active
+    }
+
+    PayrollDetail {
+        decimal amount
+        varchar description
     }
 
     Department {
@@ -61,6 +78,29 @@ varchar status
         date start_date
         date end_date
         boolean active
+    }
+
+    WorkSchedule {
+        date work_date
+        time start_time
+        time end_time
+        varchar type
+        varchar status
+        varchar note
+        bigint createdby
+    }
+
+    WorkRequest {
+        varchar request_type
+        date request_date
+        date target_date
+        time start_time
+        time end_time
+        varchar reason
+        varchar conpensation_description
+        varchar status
+        bigint reviewed_by_account_id
+        varchar review_comment
     }
 
     Vacation {
@@ -95,9 +135,13 @@ varchar status
     Rol ||--o{ Department : "CREA / ELIMINA"
     Rol ||--o{ Position : "CREA / ELIMINA"
     Rol ||--o{ Employee : "CREA / ELIMINA / CONSULTA / MODIFICA"
+    Rol ||--o{ WorkSchedule : "GESTIONA"
+    Rol ||--o{ WorkRequest : "REVISA"
     Rol ||--o{ Vacation : "ACEPTA / CONSULTA"
     Rol ||--o{ License : "ACEPTA / CONSULTA"
-    Rol ||--o{ Payroll : "CONSULTA"
+    Rol ||--o{ PayrollPeriod : "GESTIONA"
+    Rol ||--o{ PayrollConcept : "GESTIONA"
+    Rol ||--o{ Payroll : "GESTIONA / CONSULTA"
 
     %% Relaciones de Employee
     Employee ||--|| Account : "TIENE"
@@ -105,13 +149,19 @@ varchar status
     Branch ||--o{ EmployeeAssignment : "ASIGNA"
     Department ||--o{ EmployeeAssignment : "ASIGNA"
     Position ||--o{ EmployeeAssignment : "ASIGNA"
+    Employee ||--o{ WorkSchedule : "TIENE"
+    Employee ||--o{ WorkRequest : "REALIZA"
     Employee ||--o{ Vacation : "PIDE / CONSULTA / ELIMINA"
     Employee ||--o{ License : "PIDE / CONSULTA / ELIMINA"
     Employee ||--o{ Payroll : "TIENE"
+    Account ||--o{ WorkSchedule : "CREA"
+    Account ||--o{ WorkRequest : "REVISA"
     Account ||--o{ Vacation : "REVISA"
     Account ||--o{ License : "REVISA"
 
     %% Otras Relaciones
     License ||--o| Certificate : "Tiene"
-    Payroll ||--o{ Variation : "TIENE"
+    PayrollPeriod ||--o{ Payroll : "AGRUPA"
+    Payroll ||--o{ PayrollDetail : "TIENE"
+    PayrollConcept ||--o{ PayrollDetail : "SE APLICA EN"
 ```

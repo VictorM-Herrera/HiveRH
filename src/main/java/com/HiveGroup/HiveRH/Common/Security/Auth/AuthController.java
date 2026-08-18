@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,7 +35,8 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/register")
-    @Operation(summary = "Register account", description = "Creates a user account. Requires an ADMIN or STAFF token. The password is stored encrypted and the selected role defines the account permissions.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Register account", description = "Creates a user account without linking it to an employee. Requires an ADMIN token.")
     public ResponseEntity<ResponseAccountDTO> registerUser(@Valid @RequestBody NewAccountDTO newAccountDTO) {
         return new ResponseEntity<>(accountService.save(newAccountDTO), HttpStatus.CREATED);
     }

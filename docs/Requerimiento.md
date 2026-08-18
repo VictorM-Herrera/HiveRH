@@ -2,7 +2,7 @@
 
 HiveRH es un sistema interno de gestión de empleados pensado para empresas que necesitan organizar y administrar su área de Recursos Humanos.
 
-El sistema permite gestionar empleados, cuentas de usuario, roles, sucursales, departamentos, puestos, liquidaciones de sueldo, vacaciones, licencias y certificados.
+El sistema permite gestionar empleados, cuentas de usuario, roles, sucursales, departamentos, puestos, cronogramas laborales, solicitudes de jornada, liquidaciones de sueldo, vacaciones, licencias y certificados.
 
 ---
 
@@ -59,7 +59,7 @@ Funciones principales:
 
 El usuario con rol **STAFF** representa al personal del área de Recursos Humanos.
 
-Tiene permisos para gestionar empleados, revisar solicitudes, administrar licencias y vacaciones.
+Tiene permisos para gestionar empleados, revisar solicitudes, administrar cronogramas laborales, solicitudes de jornada, licencias, vacaciones y liquidaciones.
 
 Funciones principales:
 
@@ -69,7 +69,9 @@ Funciones principales:
 - Consultar listados de empleados.
 - Gestionar vacaciones.
 - Gestionar licencias.
-- Administrar liquidaciones y variaciones salariales.
+- Gestionar cronogramas laborales.
+- Revisar solicitudes de jornada.
+- Administrar períodos, conceptos y liquidaciones de sueldo.
 
 ---
 
@@ -85,7 +87,8 @@ Funciones principales:
 - Ver su historial de sueldos.
 - Solicitar vacaciones.
 - Solicitar licencias.
-- Solicitar traslados internos.
+- Consultar su cronograma laboral.
+- Solicitar cambios puntuales de jornada.
 
 ---
 
@@ -181,16 +184,52 @@ Entre los datos modificables se incluyen:
 
 STAFF puede calcular y asignar las liquidaciones mensuales de los empleados.
 
-El sistema utiliza el sueldo base del empleado y permite agregar variaciones salariales.
+El sistema organiza las liquidaciones por período mensual y guarda una copia del sueldo base del empleado al momento de liquidar.
 
-Las variaciones pueden ser:
+Cada liquidación puede incluir detalles asociados a conceptos reutilizables, por ejemplo:
 
 - Bonos.
 - Descuentos.
 - Horas extra.
 - Ajustes salariales.
 
-Una variación positiva suma al sueldo y una variación negativa descuenta del total.
+Los conceptos de tipo ADDITION suman al sueldo y los conceptos de tipo DEDUCTION descuentan del total.
+
+---
+
+### Gestionar cronogramas laborales
+
+STAFF puede asignar cronogramas laborales a los empleados.
+
+El sistema permite registrar:
+
+- Días laborales.
+- Días libres.
+- Feriados.
+- Horas extra.
+
+Cada cronograma queda asociado a un empleado, una fecha y un tipo. Cuando corresponde, también registra horario de inicio y fin.
+
+El sistema no permite cargar cronogramas activos superpuestos para el mismo empleado en la misma fecha y rango horario.
+
+---
+
+### Revisar solicitudes de jornada
+
+STAFF puede revisar solicitudes puntuales realizadas por los empleados sobre su jornada laboral.
+
+El sistema permite revisar pedidos como:
+
+- Día libre específico.
+- Cambio de turno.
+- Entrada tarde.
+- Salida anticipada.
+- Horas extra.
+- Día compensatorio.
+
+Las solicitudes quedan en estado **PENDING** hasta que STAFF o ADMIN las apruebe o rechace.
+
+Cuando se aprueba una solicitud, el sistema registra quién la revisó y actualiza el cronograma laboral correspondiente.
 
 ---
 
@@ -269,16 +308,30 @@ La solicitud queda pendiente de aprobación por parte de STAFF.
 
 ---
 
-### Solicitar traslado interno
+### Consultar cronograma laboral
 
-El empleado puede solicitar un cambio interno dentro de la empresa.
+El empleado puede consultar únicamente su propio cronograma laboral.
 
-La solicitud puede estar relacionada con:
+Puede ver qué días trabaja, en qué horario, qué días tiene libres, si tiene feriados asignados o si se le cargaron horas extra.
 
-- Sucursal.
-- Departamento.
-- Área.
-- Puesto.
+---
+
+### Solicitar cambios de jornada
+
+El empleado puede crear solicitudes puntuales relacionadas con su jornada laboral.
+
+Puede solicitar:
+
+- Día libre específico.
+- Cambio de turno.
+- Entrada tarde.
+- Salida anticipada.
+- Horas extra.
+- Día compensatorio.
+
+La solicitud queda en estado **PENDING** hasta que STAFF o ADMIN la revise.
+
+El empleado solo puede cancelar solicitudes propias mientras sigan en estado **PENDING**.
 
 ---
 
@@ -289,6 +342,8 @@ HiveRH permite administrar las principales tareas del área de Recursos Humanos:
 - Alta, baja y modificación de empleados.
 - Gestión de roles y permisos.
 - Administración de sucursales, departamentos y puestos.
+- Gestión de cronogramas laborales.
+- Gestión de solicitudes puntuales de jornada.
 - Gestión de sueldos, bonos y descuentos.
 - Registro de vacaciones.
 - Registro de licencias y certificados.

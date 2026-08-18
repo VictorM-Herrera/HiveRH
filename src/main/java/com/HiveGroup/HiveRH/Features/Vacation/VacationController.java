@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/vacations")
 @RequiredArgsConstructor
-@Tag(name = "09 Vacations", description = "Vacation requests and records.")
+@Tag(name = "12 Vacations", description = "Vacation requests and records.")
 public class VacationController {
 
     private final VacationService vacationService;

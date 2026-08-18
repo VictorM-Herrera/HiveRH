@@ -7,6 +7,8 @@ import com.HiveGroup.HiveRH.Features.EmployeeAssignment.EmployeeAssignmentEntity
 import com.HiveGroup.HiveRH.Features.License.LicenseEntity;
 import com.HiveGroup.HiveRH.Features.Payroll.PayrollEntity;
 import com.HiveGroup.HiveRH.Features.Vacation.VacationEntity;
+import com.HiveGroup.HiveRH.Features.WorkRequest.WorkRequestEntity;
+import com.HiveGroup.HiveRH.Features.WorkSchedule.WorkScheduleEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -76,4 +78,10 @@ public class EmployeeEntity {
 
     @OneToMany(mappedBy = "employee")
     private List<VacationEntity> vacations = null;
+
+    @OneToMany(mappedBy = "employee")
+    private List<WorkScheduleEntity> workSchedules = null;
+
+    @OneToMany(mappedBy = "employee")
+    private List<WorkRequestEntity> workRequests = null;
 }

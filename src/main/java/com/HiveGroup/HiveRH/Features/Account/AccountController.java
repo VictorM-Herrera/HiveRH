@@ -7,15 +7,18 @@ import com.HiveGroup.HiveRH.Features.Account.DTO.UpdateAccountRoleDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -25,20 +28,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
     private final AccountService accountService;
 
-    @PatchMapping("/{email}/role")
-    @Operation(summary = "Update account role", description = "Changes the role of an existing account. Used to manage access permissions across the system.")
-    public ResponseEntity<ResponseAccountDTO> updateRole(
-            @PathVariable String email,
-            @Valid @RequestBody UpdateAccountRoleDTO request) {
-        return ResponseEntity.ok(accountService.updateRole(email, request.rol()));
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @Operation(summary = "List accounts", description = "Returns all user accounts without exposing passwords. Requires an ADMIN or STAFF token.")
+    public ResponseEntity<List<ResponseAccountDTO>> getAccounts() {
+        return ResponseEntity.ok(accountService.findAll());
     }
 
-    @PatchMapping("/{dni}/rol")
-    @Operation(summary = "Update account role by employee DNI", description = "Changes the role of the account linked to the provided employee DNI.")
-    public ResponseEntity<ResponseAccountDTO> updateRoleDNI(
-            @PathVariable @Positive(message = "El ID de la cuenta debe ser mayor que cero") String dni,
+    @PatchMapping("/{identifier}/rol")
+    @Operation(summary = "Update account role", description = "Changes the role of an existing account by username, email, or employee DNI when the account username is the employee DNI.")
+    public ResponseEntity<ResponseAccountDTO> updateRole(
+            @PathVariable String identifier,
             @Valid @RequestBody UpdateAccountRoleDTO request) {
-        return ResponseEntity.ok(accountService.updateRoleDNI(dni, request.rol()));
+        return ResponseEntity.ok(accountService.updateRole(identifier, request.rol()));
     }
 
     @PatchMapping("/me/email")

@@ -65,6 +65,11 @@ public class SecurityAuthorizationService {
                 .orElse(false);
     }
 
+    public boolean hasLinkedEmployee() {
+        AccountEntity account = getCurrentAccount();
+        return account != null && account.getEmployee() != null;
+    }
+
     public boolean canCreateLicenseForEmployee(Long employeeId) {
         if (hasAnyRole("ROLE_ADMIN", "ROLE_STAFF")) {
             return true;
@@ -94,10 +99,6 @@ public class SecurityAuthorizationService {
             return true;
         }
 
-        if (hasAnyRole("ROLE_STAFF")) {
-            return false;
-        }
-
         AccountEntity account = getCurrentAccount();
         return account != null && licenseRepository.findById(licenseId)
                 .map(license -> license.getStatus() == AbsenceStatus.PENDING
@@ -109,10 +110,6 @@ public class SecurityAuthorizationService {
     public boolean canDeleteVacation(Long vacationId) {
         if (hasAnyRole("ROLE_ADMIN")) {
             return true;
-        }
-
-        if (hasAnyRole("ROLE_STAFF")) {
-            return false;
         }
 
         AccountEntity account = getCurrentAccount();

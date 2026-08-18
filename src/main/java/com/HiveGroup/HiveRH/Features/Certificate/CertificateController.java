@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @AllArgsConstructor
 @Validated
-@Tag(name = "11 Certificates", description = "PDF certificate upload, lookup, and download.")
+@Tag(name = "14 Certificates", description = "PDF certificate upload, lookup, and download.")
 public class CertificateController {
     CertificateService certificateService;
 

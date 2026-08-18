@@ -37,6 +37,8 @@ import java.util.Objects;
 @AllArgsConstructor
 public class EmployeeService {
 
+    private static final String PROTECTED_ADMIN_USER = "admin";
+
     private final EmployeeRepository employeeRepository;
     private final BranchRepository branchRepository;
     private final AccountRepository accountRepository;
@@ -111,6 +113,8 @@ public class EmployeeService {
         EmployeeEntity employee = employeeRepository.findByDni(dni)
                 .orElseThrow(() -> new EntityNotFoundException("Empleado no encontrado para el DNI indicado", "Employee"));
 
+        validateProtectedAdminCanNotBeTerminated(employee, EmployeeStatus.TERMINATED);
+
         employee.setStatus(EmployeeStatus.TERMINATED);
         if (employee.getTerminationDate() == null) {
             employee.setTerminationDate(LocalDate.now());
@@ -135,6 +139,7 @@ public class EmployeeService {
 
         validateUniqueDni(employeeUpdateDTO.dni(), employee.getId_employee());
         validateAdult(employeeUpdateDTO.birth_date());
+        validateProtectedAdminCanNotBeTerminated(employee, employeeUpdateDTO.status());
 
         employee.setName(employeeUpdateDTO.name());
         employee.setLastName(employeeUpdateDTO.lastName());
@@ -181,6 +186,8 @@ public class EmployeeService {
         if (employeePatchDTO.birth_date() != null) {
             validateAdult(employeePatchDTO.birth_date());
         }
+
+        validateProtectedAdminCanNotBeTerminated(employee, employeePatchDTO.status());
 
         employee.setName(employeePatchDTO.name() != null ? employeePatchDTO.name() : employee.getName());
         employee.setLastName(employeePatchDTO.lastName() != null ? employeePatchDTO.lastName() : employee.getLastName());
@@ -353,6 +360,16 @@ public class EmployeeService {
                             "Ya existe un empleado registrado con el DNI " + dni
                     );
                 });
+    }
+
+    private void validateProtectedAdminCanNotBeTerminated(EmployeeEntity employee, EmployeeStatus requestedStatus) {
+        if (requestedStatus == EmployeeStatus.TERMINATED && isProtectedAdminAccount(employee.getAccount())) {
+            throw new IllegalArgumentException("La cuenta admin principal no puede ser dada de baja");
+        }
+    }
+
+    private boolean isProtectedAdminAccount(AccountEntity account) {
+        return account != null && PROTECTED_ADMIN_USER.equalsIgnoreCase(account.getUser());
     }
 
     private EmployeeAssignmentEntity createAssignment(

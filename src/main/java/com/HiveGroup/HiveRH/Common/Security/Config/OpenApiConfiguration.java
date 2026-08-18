@@ -24,8 +24,8 @@ public class OpenApiConfiguration {
                         .title("HiveRH API")
                         .description("""
                                 REST API for Human Resources workflows: employees, accounts, roles,
-                                organizational structure, payrolls, licenses, vacations, certificates,
-                                and salary variations.
+                                organizational structure, work schedules, work requests, payroll periods,
+                                payrolls, licenses, vacations, and certificates.
 
                                 ### How to test this API
 
@@ -42,7 +42,7 @@ public class OpenApiConfiguration {
 
                                 - `ADMIN`: manages accounts, roles, branches, departments, positions, and general resources.
                                 
-                                - `STAFF`: manages employees, licenses, vacations, and payrolls.
+                                - `STAFF`: manages employees, work schedules, work requests, licenses, vacations, and payrolls.
                                 
                                 - `EMPLOYEE`: reads and manages their own resources when business rules allow it.
 
@@ -62,11 +62,14 @@ public class OpenApiConfiguration {
                         new Tag().name("04 Departments").description("Internal department management."),
                         new Tag().name("05 Positions").description("Job position management."),
                         new Tag().name("06 Employees").description("Employee records, profiles, and status management."),
-                        new Tag().name("07 Variations").description("Salary concepts that add to or subtract from payrolls."),
-                        new Tag().name("08 Payrolls").description("Payroll records and employee payroll queries."),
-                        new Tag().name("09 Vacations").description("Vacation requests and records."),
-                        new Tag().name("10 Licenses").description("Employee licenses and approval status."),
-                        new Tag().name("11 Certificates").description("PDF certificate upload, lookup, and download.")
+                        new Tag().name("07 Work Schedules").description("Assigned employee work schedules and daily work blocks."),
+                        new Tag().name("08 Work Requests").description("Employee daily work requests and administrative review."),
+                        new Tag().name("09 Payroll Periods").description("Monthly payroll periods and closing workflow."),
+                        new Tag().name("10 Payroll Concepts").description("Reusable payroll concepts for additions and deductions."),
+                        new Tag().name("11 Payrolls").description("Payroll records, details, and employee payroll history."),
+                        new Tag().name("12 Vacations").description("Vacation requests and records."),
+                        new Tag().name("13 Licenses").description("Employee licenses and approval status."),
+                        new Tag().name("14 Certificates").description("PDF certificate upload, lookup, and download.")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
                 .components(new Components()

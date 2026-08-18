@@ -22,8 +22,11 @@ public class DemoDataCleanupScheduler {
 
     private static final List<String> OPERATIONAL_TABLES = List.of(
             "certificate",
-            "payroll_variation",
+            "work_request",
+            "work_schedule",
+            "payroll_detail",
             "payroll",
+            "payroll_period",
             "vacation",
             "license",
             "employee_assignment",
@@ -31,7 +34,7 @@ public class DemoDataCleanupScheduler {
     );
 
     private static final List<String> CATALOG_TABLES = List.of(
-            "variation",
+            "payroll_concept",
             "position",
             "department",
             "branch"
