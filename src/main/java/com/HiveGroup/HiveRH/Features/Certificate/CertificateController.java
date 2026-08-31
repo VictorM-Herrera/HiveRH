@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Certificate;
 
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.CertificateDTO;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.RequestCertificateDTO;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.ResponseCertificateDTO;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 @AllArgsConstructor
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "14 Certificates", description = "PDF certificate upload, lookup, and download.")
 public class CertificateController {
     CertificateService certificateService;
+    FileLectorService fileLectorService;
 
     @PostMapping(value = "/api/certificates", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("@securityAuthorizationService.canAccessLicense(#request.idLicense())")
@@ -65,5 +68,10 @@ public class CertificateController {
             @P("id_certificate") @PathVariable @NotNull(message = "El ID del certificado es obligatorio") @Positive(message = "El ID del certificado debe ser mayor que cero") Long id_certificate) {
         certificateService.deleteCertificate(id_certificate);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<?> test_picture(MultipartFile file){
+        return ResponseEntity.ok(fileLectorService.test(file));
     }
 }
