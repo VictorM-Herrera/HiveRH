@@ -1,11 +1,8 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeCreateDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeFilterDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeePatchDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeResponseDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeUpdateDTO;
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
+import com.HiveGroup.HiveRH.Features.Employee.DTO.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,18 +11,14 @@ import lombok.NonNull;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -33,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "06 Employees", description = "Employee records, profiles, and status management.")
 public class EmployeeController {
     private final EmployeeService employeeService;
+    private final FileLectorService fileLectorService;
 
     @GetMapping("/me")
     @Operation(summary = "Get my employee profile", description = "Returns the employee profile associated with the authenticated account.")
@@ -78,5 +72,21 @@ public class EmployeeController {
     @Operation(summary = "Terminate employee", description = "Soft-deletes the employee by DNI, changing their status to TERMINATED and closing active assignments.")
     public ResponseEntity<EmployeeResponseDTO> deleteEmployee(@NonNull @PathVariable String dni) {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
+    }
+
+    @PatchMapping(  value = "/picture",
+                    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //@PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dni)")
+    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(
+            @ModelAttribute EmployeePictureDTO data) {
+        return ResponseEntity.ok()
+                .body(employeeService.savePicture(data.file(), data.dni()));
+    }
+
+    @GetMapping("/picture/{dni}")
+    public ResponseEntity<byte[]> getPicture(@PathVariable @NonNull String dni) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(employeeService.loadPicture(dni));
     }
 }

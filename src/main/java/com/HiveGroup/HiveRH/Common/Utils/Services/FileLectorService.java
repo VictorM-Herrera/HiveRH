@@ -13,11 +13,24 @@ import java.util.Set;
 public class FileLectorService {
 
     public byte[] savePDF(MultipartFile pdf) throws IOException {
+        if (pdf == null || pdf.isEmpty()) throw new IllegalArgumentException("El archivo esta vacio");
+        if (pdf.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("Tamaño maximo superado (5mb)");
+
+        String contentName = pdf.getOriginalFilename();
+        if (contentName == null || !contentName.contains(".")) {
+            throw new IllegalArgumentException("Extensión no permitida");
+        }
+
+        String ext = contentName.substring(contentName.lastIndexOf('.') + 1);
+        if (!ext.contains("pdf"))
+            throw new IllegalArgumentException("Extencion no permitida"+" -> "+ext);
+
         return pdf.getBytes();
     }
 
-    public Path loadPDF(byte[] arrByte) throws IOException {
-        return Files.write(Paths.get("test.pdf"), arrByte);
+    public byte[] savePicture(MultipartFile file) throws IOException{
+        validateImage(file);
+        return file.getBytes();
     }
 
     private void validateContentImage(MultipartFile file) {
@@ -31,9 +44,15 @@ public class FileLectorService {
     }
 
     private void validateExtImage(MultipartFile file) {
-        String contentType = file.getContentType();
-        if (!Set.of("image/jpeg", "image/png")
-                .contains(contentType)) throw new IllegalArgumentException("Extencion no permitida");
+        String contentName = file.getOriginalFilename();
+
+        if (contentName == null || !contentName.contains(".")) {
+            throw new IllegalArgumentException("Extensión no permitida");
+        }
+
+        String ext = contentName.substring(contentName.lastIndexOf('.') + 1);
+        if (!ext.contains("jpg") && !ext.contains("png") && !ext.contains("jpeg"))
+            throw new IllegalArgumentException("Extencion no permitida"+" -> "+ext);
     }
 
     private void validateImage(MultipartFile file) {
@@ -41,10 +60,4 @@ public class FileLectorService {
         validateSizeImage(file);
         validateExtImage(file);
     }
-
-    public String test(MultipartFile file) {
-        validateImage(file);
-        return "name:" + file.getOriginalFilename() + " | ext:" + file.getContentType() + " size:" + file.getSize() * 1024 * 1024;
-    }
-
 }

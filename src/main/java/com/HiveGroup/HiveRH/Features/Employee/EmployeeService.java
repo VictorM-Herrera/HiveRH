@@ -5,6 +5,7 @@ import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
 import com.HiveGroup.HiveRH.Common.Utils.TextSearchUtils;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
@@ -19,6 +20,8 @@ import com.HiveGroup.HiveRH.Features.Position.PositionEntity;
 import com.HiveGroup.HiveRH.Features.Position.PositionRepository;
 import lombok.AllArgsConstructor;
 import org.hibernate.Hibernate;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -26,7 +29,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
@@ -45,6 +54,7 @@ public class EmployeeService {
     private final PositionRepository positionRepository;
     private final DepartamentRepository departamentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileLectorService fileLectorService;
 
     @Transactional
     public EmployeeResponseDTO create(EmployeeCreateDTO employeeCreateDTO) {
@@ -94,10 +104,21 @@ public class EmployeeService {
         assignments.add(assignment);
         employee.setAssignments(assignments);
 
+
+        Resource resource = new ClassPathResource("images/default-avatar.png");
+        try {
+            byte[] image = resource.getInputStream().readAllBytes();
+            employee.setProfilePicture(image);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
         EmployeeEntity createdEmployee = employeeRepository.save(employee);
 
         AccountEntity defaultAccount = createDefaultAccount(createdEmployee);
         createdEmployee.setAccount(defaultAccount);
+
 
         createdEmployee = employeeRepository.save(createdEmployee);
 
@@ -552,5 +573,27 @@ public class EmployeeService {
                 Hibernate.initialize(assignment.getPosition());
             });
         }
+    }
+
+    public EmployeeResponsePictureDTO savePicture(MultipartFile file, String dni) {
+        try {
+            EmployeeEntity employee = employeeRepository.findByDni(dni).orElseThrow(() -> new EntityNotFoundException("Dni no encontrado", "Employee"));
+            employee.setProfilePicture(fileLectorService.savePicture(file));
+
+            return toEmployeePictoreDTO(employeeRepository.save(employee));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public byte[] loadPicture(String dni) {
+        EmployeeEntity employee = employeeRepository.findByDni(dni)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Dni no encontrado", "Employee"));
+        return employee.getProfilePicture();
+    }
+
+    private EmployeeResponsePictureDTO toEmployeePictoreDTO(EmployeeEntity employee) {
+        return new EmployeeResponsePictureDTO(employee.getDni(), employee.getProfilePicture());
     }
 }
