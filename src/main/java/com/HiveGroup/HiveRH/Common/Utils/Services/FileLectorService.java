@@ -26,6 +26,7 @@ public class FileLectorService {
         validateImage(file);
         return file.getBytes();
     }
+
     private void validateContentImage(MultipartFile file) {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo esta vacio");
     }
