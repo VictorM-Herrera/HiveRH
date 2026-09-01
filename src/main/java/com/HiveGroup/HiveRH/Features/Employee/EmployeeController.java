@@ -15,15 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -82,9 +74,13 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
     }
 
-    @PostMapping("/picture")
-    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(@NonNull @RequestBody EmployeePictureDTO data) {
-        return ResponseEntity.ok().body(employeeService.savePicture(data.file(), data.dni()));
+    @PatchMapping(  value = "/picture",
+                    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    //@PreAuthorize("@securityAuthorizationService.canAccessEmployeeDni(#dni)")
+    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(
+            @ModelAttribute EmployeePictureDTO data) {
+        return ResponseEntity.ok()
+                .body(employeeService.savePicture(data.file(), data.dni()));
     }
 
     @GetMapping("/picture/{dni}")

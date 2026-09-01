@@ -38,9 +38,15 @@ public class FileLectorService {
     }
 
     private void validateExtImage(MultipartFile file) {
-        String contentType = file.getContentType();
-        if (!Set.of("image/jpeg", "image/png")
-                .contains(contentType)) throw new IllegalArgumentException("Extencion no permitida");
+        String contentName = file.getOriginalFilename();
+
+        if (contentName == null || !contentName.contains(".")) {
+            throw new IllegalArgumentException("Extensión no permitida");
+        }
+
+        String ext = contentName.substring(contentName.lastIndexOf('.') + 1);
+        if (!ext.contains("jpg") && !ext.contains("png") && !ext.contains("jpeg"))
+            throw new IllegalArgumentException("Extencion no permitida"+" -> "+ext);
     }
 
     private void validateImage(MultipartFile file) {
