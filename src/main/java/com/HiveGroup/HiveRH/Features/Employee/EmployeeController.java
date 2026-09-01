@@ -11,6 +11,7 @@ import lombok.NonNull;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
@@ -80,16 +81,16 @@ public class EmployeeController {
     public ResponseEntity<EmployeeResponseDTO> deleteEmployee(@NonNull @PathVariable String dni) {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
     }
+
     @PostMapping("/picture")
-    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(@NonNull @RequestBody EmployeePictureDTO data){
+    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(@NonNull @RequestBody EmployeePictureDTO data) {
         return ResponseEntity.ok().body(employeeService.savePicture(data.file(), data.dni()));
     }
+
     @GetMapping("/picture/{dni}")
-    public ResponseEntity<Path> getPicture(@PathVariable @NonNull String dni){
-        try {
-            return ResponseEntity.ok().body(employeeService.loadPicture(dni));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<byte[]> getPicture(@PathVariable @NonNull String dni) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(employeeService.loadPicture(dni));
     }
 }

@@ -31,7 +31,7 @@ public class EmployeeEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "lastname", nullable = false, length = 100)
+    @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
     @Column(name = "phone", nullable = false, length = 100)

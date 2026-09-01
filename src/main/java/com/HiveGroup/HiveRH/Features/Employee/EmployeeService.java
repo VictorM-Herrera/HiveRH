@@ -106,7 +106,7 @@ public class EmployeeService {
 
 
         Resource resource = new ClassPathResource("images/default-avatar.png");
-        try{
+        try {
             byte[] image = resource.getInputStream().readAllBytes();
             employee.setProfilePicture(image);
         } catch (IOException e) {
@@ -586,14 +586,14 @@ public class EmployeeService {
         }
     }
 
-    public Path loadPicture(String dni) throws IOException{
-        EmployeeEntity employee = employeeRepository.findByDni(dni).orElseThrow(()
-                -> new EntityNotFoundException("Dni no encontrado", "Employee"));
-        byte[] arrByte = employee.getProfilePicture();
-
-        return Files.write(Paths.get(employee.getDni()), arrByte);
+    public byte[] loadPicture(String dni) {
+        EmployeeEntity employee = employeeRepository.findByDni(dni)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Dni no encontrado", "Employee"));
+        return employee.getProfilePicture();
     }
-    private EmployeeResponsePictureDTO toEmployeePictoreDTO( EmployeeEntity employee){
+
+    private EmployeeResponsePictureDTO toEmployeePictoreDTO(EmployeeEntity employee) {
         return new EmployeeResponsePictureDTO(employee.getDni(), employee.getProfilePicture());
     }
 }
