@@ -1,11 +1,8 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeCreateDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeFilterDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeePatchDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeResponseDTO;
-import com.HiveGroup.HiveRH.Features.Employee.DTO.EmployeeUpdateDTO;
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
+import com.HiveGroup.HiveRH.Features.Employee.DTO.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,12 +24,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 @RestController
 @RequestMapping("/api/employees")
 @AllArgsConstructor
 @Tag(name = "06 Employees", description = "Employee records, profiles, and status management.")
 public class EmployeeController {
     private final EmployeeService employeeService;
+    private final FileLectorService fileLectorService;
 
     @GetMapping("/me")
     @Operation(summary = "Get my employee profile", description = "Returns the employee profile associated with the authenticated account.")
@@ -78,5 +79,17 @@ public class EmployeeController {
     @Operation(summary = "Terminate employee", description = "Soft-deletes the employee by DNI, changing their status to TERMINATED and closing active assignments.")
     public ResponseEntity<EmployeeResponseDTO> deleteEmployee(@NonNull @PathVariable String dni) {
         return ResponseEntity.ok(employeeService.deleteByDni(dni));
+    }
+    @PostMapping("/picture")
+    public ResponseEntity<EmployeeResponsePictureDTO> loadProfilePicture(@NonNull @RequestBody EmployeePictureDTO data){
+        return ResponseEntity.ok().body(employeeService.savePicture(data.file(), data.dni()));
+    }
+    @GetMapping("/picture/{dni}")
+    public ResponseEntity<Path> getPicture(@PathVariable @NonNull String dni){
+        try {
+            return ResponseEntity.ok().body(employeeService.loadPicture(dni));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
 import com.HiveGroup.HiveRH.Common.Utils.TextSearchUtils;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
@@ -26,7 +27,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
@@ -45,6 +51,7 @@ public class EmployeeService {
     private final PositionRepository positionRepository;
     private final DepartamentRepository departamentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileLectorService fileLectorService;
 
     @Transactional
     public EmployeeResponseDTO create(EmployeeCreateDTO employeeCreateDTO) {
@@ -552,5 +559,27 @@ public class EmployeeService {
                 Hibernate.initialize(assignment.getPosition());
             });
         }
+    }
+
+    public EmployeeResponsePictureDTO savePicture(MultipartFile file, String dni) {
+        try {
+            EmployeeEntity employee = employeeRepository.findByDni(dni).orElseThrow(() -> new EntityNotFoundException("Dni no encontrado", "Employee"));
+            employee.setProfilePicture(fileLectorService.savePicture(file));
+
+            return toEmployeePictoreDTO(employeeRepository.save(employee));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Path loadPicture(String dni) throws IOException{
+        EmployeeEntity employee = employeeRepository.findByDni(dni).orElseThrow(()
+                -> new EntityNotFoundException("Dni no encontrado", "Employee"));
+        byte[] arrByte = employee.getProfilePicture();
+
+        return Files.write(Paths.get(employee.getDni()), arrByte);
+    }
+    private EmployeeResponsePictureDTO toEmployeePictoreDTO( EmployeeEntity employee){
+        return new EmployeeResponsePictureDTO(employee.getDni(), employee.getProfilePicture());
     }
 }

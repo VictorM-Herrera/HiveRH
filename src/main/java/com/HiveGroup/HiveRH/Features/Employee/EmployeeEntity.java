@@ -11,6 +11,7 @@ import com.HiveGroup.HiveRH.Features.WorkRequest.WorkRequestEntity;
 import com.HiveGroup.HiveRH.Features.WorkSchedule.WorkScheduleEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -62,6 +63,9 @@ public class EmployeeEntity {
 
     @Enumerated(EnumType.STRING)
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
+
+    @Column(name = "profile_picture", columnDefinition = "LONGBLOB")
+    private byte[] profilePicture;
 
     @OneToOne(optional = true)
     @JoinColumn(name = "id_account", nullable = true)

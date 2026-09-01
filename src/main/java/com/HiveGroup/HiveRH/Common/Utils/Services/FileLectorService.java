@@ -20,6 +20,12 @@ public class FileLectorService {
         return Files.write(Paths.get("test.pdf"), arrByte);
     }
 
+
+
+    public byte[] savePicture(MultipartFile file) throws IOException{
+        validateImage(file);
+        return file.getBytes();
+    }
     private void validateContentImage(MultipartFile file) {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("El archivo esta vacio");
     }

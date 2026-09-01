@@ -70,8 +70,5 @@ public class CertificateController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<?> test_picture(MultipartFile file){
-        return ResponseEntity.ok(fileLectorService.test(file));
-    }
+
 }
