@@ -4,7 +4,7 @@ Guia operativa para agentes que retomen el proyecto sin depender del historial d
 
 ## Como entender el proyecto
 
-- Empezar por `README.md`, luego `docs/ai-context.md`, `docs/current-state.md`, `docs/decisions.md` y `docs/Requerimiento.md`.
+- Empezar por `README.md`, luego `docs/ai-context.md`, `docs/current-state.md`, `docs/decisions.md`, `docs/Requerimiento.md` y, para trabajo de frontend/MVP, `docs/frontend-mvp-v1.md`.
 - Para endpoints concretos, contrastar siempre `docs/Postman_Endpoints.md` con los controllers actuales. Hay documentacion auxiliar que puede estar desactualizada.
 - La fuente de verdad tecnica esta en `src/main/java/com/HiveGroup/HiveRH` y `src/main/resources/application.yaml`.
 - El DER vive como `docs/DER.pdf`. Si una regla del DER contradice el codigo actual, marcarlo como pendiente de confirmar antes de modificar entidades.
@@ -14,7 +14,7 @@ Guia operativa para agentes que retomen el proyecto sin depender del historial d
 - Java 17.
 - Spring Boot 4.0.6.
 - Spring Web MVC.
-- Spring Security con JWT stateless.
+- Spring Security con access JWT stateless y refresh token rotativo en cookie `HttpOnly`.
 - Spring Data JPA / Hibernate.
 - MySQL.
 - Jakarta Bean Validation.
@@ -90,6 +90,10 @@ Variables principales: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `EMAIL_ADDRESS`, `EMA
 ## Reglas de seguridad y flujo
 
 - `POST /api/auth/login` es publico.
+- `GET /api/auth/csrf`, `POST /api/auth/refresh` y `POST /api/auth/logout` son publicos; login, refresh y logout requieren `X-XSRF-TOKEN`.
+- El access JWT se devuelve al frontend y se envia por `Authorization: Bearer`; el refresh token nunca se devuelve en JSON, se guarda como hash y viaja en cookie `HttpOnly`.
+- El frontend debe conservar el access token solo en memoria, usar `withCredentials` en auth y no guardar tokens en `localStorage` ni `sessionStorage`.
+- CORS debe usar una allowlist exacta. En produccion, las cookies requieren HTTPS; si frontend y API estan en sitios distintos usar `SameSite=None` y `Secure=true`.
 - `POST /api/auth/register` es solo `ADMIN` y se conserva para crear cuentas sin empleado asociado.
 - El flujo principal es crear empleado desde `POST /api/employees`; eso crea una cuenta `EMPLOYEE` vinculada con usuario/password inicial igual al DNI.
 - Para convertir una cuenta vinculada a empleado en `STAFF` o `ADMIN`, usar `PATCH /api/accounts/{identifier}/rol`.
@@ -105,7 +109,7 @@ Variables principales: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `EMAIL_ADDRESS`, `EMA
 - No volver a crear `Variation`; fue reemplazado por conceptos y detalles de payroll.
 - No renombrar `STAFF` a `RRHH`.
 - No tocar datos reales ni activar schedulers de limpieza sin revisar variables de entorno.
-- Antes de correr la app contra una base con datos, revisar `spring.jpa.hibernate.ddl-auto` en `application.yaml`; actualmente esta en `create`, lo que puede recrear esquema.
+- Antes de correr la app contra una base con datos, revisar `spring.jpa.hibernate.ddl-auto` en `application.yaml`; actualmente esta en `update`, pero no reemplaza migraciones formales y puede alterar el esquema.
 - Mantener cambios acotados al pedido. No refactorizar controllers/services ajenos si no es necesario.
 - Tests y documentacion deben versionarse. `target/`, `.env` e IDE metadata no.
 

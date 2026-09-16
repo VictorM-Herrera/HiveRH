@@ -14,6 +14,7 @@ Variables de token que ya tenes:
 {{adminToken}}
 {{staffToken}}
 {{employeeToken}}
+{{csrfToken}}
 ```
 
 Variables opcionales recomendadas para copiar los ejemplos tal cual:
@@ -85,6 +86,18 @@ Nota: tambien existen endpoints tecnicos de Swagger/OpenAPI (`/v3/api-docs`, `/s
 
 ## 01 Auth
 
+### 0. Obtener CSRF
+
+```http
+GET {{baseUrl}}/api/auth/csrf
+```
+
+Guardar el campo `token` de la respuesta como `{{csrfToken}}`. Postman debe conservar las cookies del host en su cookie jar. Login, refresh y logout requieren:
+
+```text
+X-XSRF-TOKEN: {{csrfToken}}
+```
+
 ### 1. Login
 
 ```http
@@ -92,6 +105,8 @@ POST {{baseUrl}}/api/auth/login
 ```
 
 Auth: sin token.
+
+Header adicional: `X-XSRF-TOKEN: {{csrfToken}}`.
 
 Body raw JSON:
 
@@ -106,6 +121,26 @@ Campos:
 
 - `identifier`: requerido. Usuario o email. Max 100.
 - `password`: requerido. Max 72.
+
+La respuesta contiene `accessToken`, `tokenType`, `expiresInSeconds`, `identifier`, `roles` y `mustChangePassword`. La cookie HttpOnly de refresh se guarda automaticamente en el cookie jar; no se copia a una variable.
+
+### 1a. Renovar access token
+
+```http
+POST {{baseUrl}}/api/auth/refresh
+X-XSRF-TOKEN: {{csrfToken}}
+```
+
+Auth: sin bearer. La cookie de refresh debe estar presente. La respuesta rota esa cookie y devuelve un nuevo `accessToken`.
+
+### 1b. Cerrar sesion
+
+```http
+POST {{baseUrl}}/api/auth/logout
+X-XSRF-TOKEN: {{csrfToken}}
+```
+
+Revoca la familia de refresh tokens y elimina la cookie.
 
 ### 2. Registrar cuenta
 

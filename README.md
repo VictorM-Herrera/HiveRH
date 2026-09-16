@@ -11,8 +11,8 @@ El proyecto esta planteado como un MVP academico: el foco esta en tener reglas d
 La documentacion detallada esta en la carpeta `docs`:
 
 - `docs/Requerimiento.md`: alcance funcional y reglas generales del sistema.
+- `docs/frontend-mvp-v1.md`: alcance, brechas y backlog sugerido para el desarrollo del frontend y la presentacion del MVP 1.0.
 - `docs/Informe_Entidades_Endpoints.md`: recorrido completo del sistema, entidades, endpoints y flujo recomendado para Postman/defensa.
-- `docs/Conceptual.md`: modelo conceptual del dominio.
 - `docs/DER.pdf`: diagrama entidad-relacion.
 
 Este README queda como guia rapida para levantar y entender el proyecto. Para el detalle completo de endpoints conviene ir al informe.
@@ -36,7 +36,12 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `EMAIL_ADDRESS` | Email usado como remitente SMTP | `hiverh.notificaciones@gmail.com` |
 | `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
-| `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
+| `EXPIRATION` | Duracion del access token JWT en milisegundos | `600000` |
+| `REFRESH_EXPIRATION` | Duracion maxima de una familia de refresh tokens en milisegundos | `28800000` |
+| `REFRESH_COOKIE_NAME` | Nombre de la cookie HttpOnly de refresh | `hiverh_refresh` |
+| `REFRESH_COOKIE_SECURE` | Envia la cookie solo por HTTPS; usar `false` unicamente en local HTTP | `true` |
+| `REFRESH_COOKIE_SAME_SITE` | Politica SameSite de las cookies de auth | `Strict` |
+| `FRONTEND_ORIGINS` | Allowlist CORS exacta, separada por comas | `http://localhost:4200` |
 | `DEMO_CLEANUP_ENABLED` | Activa la limpieza automatica de datos demo | `false` |
 | `DEMO_CLEANUP_DAILY_CRON` | Cron diario de limpieza | `0 0 4 * * *` |
 | `DEMO_CLEANUP_ZONE` | Zona horaria del cron | `UTC` |
@@ -53,7 +58,12 @@ DB_PASSWORD=admin
 EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
-EXPIRATION=86400000
+EXPIRATION=600000
+REFRESH_EXPIRATION=28800000
+REFRESH_COOKIE_NAME=hiverh_refresh
+REFRESH_COOKIE_SECURE=false
+REFRESH_COOKIE_SAME_SITE=Strict
+FRONTEND_ORIGINS=http://localhost:4200
 DEMO_CLEANUP_ENABLED=false
 DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
 DEMO_CLEANUP_ZONE=UTC
@@ -123,15 +133,24 @@ En Windows:
 
 ## Autenticacion
 
-La API usa JWT. Para consumir endpoints protegidos:
+La API usa un access token JWT corto y un refresh token opaco rotativo. El access token se devuelve en JSON; el refresh token se guarda en una cookie `HttpOnly`, nunca se expone al JavaScript del frontend y en la base solo se persiste su hash.
 
-1. Ejecutar `POST /api/auth/login`.
-2. Copiar el token recibido.
-3. Enviar el token en cada request protegido:
+Flujo para clientes web:
+
+1. Ejecutar `GET /api/auth/csrf` con credenciales/cookies habilitadas y conservar `token` de la respuesta.
+2. Ejecutar `POST /api/auth/login` enviando ese valor en `X-XSRF-TOKEN`, tambien con credenciales habilitadas.
+3. Conservar `accessToken` solo en memoria y enviarlo en cada request protegido:
 
 ```http
 Authorization: Bearer <token>
 ```
+
+4. Ante el primer `401`, ejecutar una sola vez `POST /api/auth/refresh` con la cabecera CSRF y cookies habilitadas. La API rota la cookie y devuelve otro access token.
+5. Ejecutar `POST /api/auth/logout` para revocar la familia de refresh tokens y borrar la cookie.
+
+No guardar access ni refresh tokens en `localStorage` o `sessionStorage`. La respuesta de login/refresh incluye `roles` para navegacion y presentacion, pero el backend sigue siendo la autoridad de permisos. El contrato frontend completo esta en `docs/frontend-mvp-v1.md`.
+
+Para despliegues donde frontend y API esten en sitios distintos se debe usar `REFRESH_COOKIE_SAME_SITE=None`, `REFRESH_COOKIE_SECURE=true`, HTTPS y una allowlist exacta en `FRONTEND_ORIGINS`. Con frontend y API en el mismo sitio se prefiere `Strict`.
 
 Roles principales:
 
@@ -154,9 +173,10 @@ Flujo recomendado para probar desde Swagger:
 2. Configurar las variables de entorno.
 3. Ejecutar la aplicacion.
 4. Entrar a `http://localhost:8080/swagger-ui.html`.
-5. Ejecutar `POST /api/auth/login` con una cuenta existente.
-6. Copiar el token de la respuesta.
-7. Presionar `Authorize` y pegar solo el token JWT.
+5. Ejecutar `GET /api/auth/csrf` y copiar `token` de la respuesta.
+6. Ejecutar `POST /api/auth/login` con una cuenta existente y enviar el token CSRF en la cabecera `X-XSRF-TOKEN`.
+7. Copiar `accessToken` de la respuesta.
+8. Presionar `Authorize` y pegar solo el access token JWT.
 
 Una vez autorizado, Swagger envia el JWT en los endpoints protegidos.
 

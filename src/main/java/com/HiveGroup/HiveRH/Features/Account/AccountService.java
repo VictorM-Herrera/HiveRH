@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Account;
 
+import com.HiveGroup.HiveRH.Common.Security.Auth.RefreshTokenService;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Features.Account.DTO.NewAccountDTO;
@@ -20,6 +21,7 @@ public class AccountService {
     private AccountRepository accountRepository;
     private AccountMapper accountMapper;
     private PasswordEncoder passwordEncoder;
+    private RefreshTokenService refreshTokenService;
 
 
     @Transactional(readOnly = true)
@@ -42,6 +44,7 @@ public class AccountService {
         return accountMapper.toResponse(entity);
     }
 
+    @Transactional
     public ResponseAccountDTO updateRole(String identifier, RolEnum rol) {
         if (rol == null) {
             throw new IllegalArgumentException("El rol es obligatorio");
@@ -53,10 +56,12 @@ public class AccountService {
                 .orElseThrow(() -> new EntityNotFoundException("Cuenta inexistente", "AccountEntity"));
         account.setRol(rol);
         accountRepository.save(account);
+        refreshTokenService.revokeAllForAccount(account);
 
         return accountMapper.toResponse(account);
     }
 
+    @Transactional
     public ResponseAccountDTO updateCurrentEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("El email es obligatorio");
@@ -65,10 +70,12 @@ public class AccountService {
         AccountEntity account = getCurrentAccount();
         account.setEmail(email);
         accountRepository.save(account);
+        refreshTokenService.revokeAllForAccount(account);
 
         return accountMapper.toResponse(account);
     }
 
+    @Transactional
     public ResponseAccountDTO updateCurrentPassword(String currentPassword, String newPassword) {
 
         AccountEntity account = getCurrentAccount();
@@ -92,6 +99,7 @@ public class AccountService {
         account.setPassword(passwordEncoder.encode(newPassword));
 
         accountRepository.save(account);
+        refreshTokenService.revokeAllForAccount(account);
 
         return accountMapper.toResponse(account);
     }

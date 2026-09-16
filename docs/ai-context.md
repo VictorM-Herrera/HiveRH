@@ -1,6 +1,6 @@
 # AI Context - HiveRH
 
-Ultima inspeccion: 2026-08-31.
+Ultima actualizacion: 2026-09-15.
 
 ## Contexto general
 
@@ -19,12 +19,32 @@ Importante: una cuenta `STAFF` o `ADMIN` puede tener empleado vinculado. En ese 
 ## Estado actual del producto
 
 - Backend Spring Boot con arquitectura package by feature.
-- API REST protegida con JWT.
+- API REST protegida con access JWT corto y refresh token opaco rotativo en cookie `HttpOnly`.
 - MySQL como persistencia.
 - Swagger/OpenAPI configurado.
 - Documentacion funcional existente en `README.md`, `docs/Requerimiento.md`, `docs/Postman_Endpoints.md` y `docs/Informe_Entidades_Endpoints.md`.
 - Tests unitarios recientes para cuentas, seguridad, empleados, work schedules, work requests y payroll.
+- Tests especificos para rotacion, reutilizacion, revocacion y atributos de la cookie de refresh.
 - No hay frontend en el repo inspeccionado.
+
+## Frontend y MVP 1.0
+
+El equipo inicio la planificacion del frontend con un corte vertical reducido para la presentacion del MVP 1.0. La prioridad no es exponer todos los modulos existentes del backend, sino completar recorridos demostrables para login por rol, empleados, estructura organizacional minima, vacaciones, licencias con certificados PDF y horarios laborales.
+
+El alcance, las exclusiones, las brechas de contrato detectadas y una propuesta de backlog Scrum/Jira estan documentados en `docs/frontend-mvp-v1.md`.
+
+Este recorte aplica al frontend y al MVP 1.0; no elimina features del backend. Payroll, WorkRequest, administracion avanzada de cuentas y otras funciones no incluidas quedan fuera de la primera interfaz salvo confirmacion posterior.
+
+## Autenticacion para el frontend
+
+- El access token es un JWT corto: se devuelve en `accessToken`, se conserva solo en memoria y se envia como `Authorization: Bearer`.
+- El refresh token es opaco, rotativo y de un solo uso. El navegador lo recibe como cookie `HttpOnly`; JavaScript no debe intentar leerlo y la base guarda solo su hash.
+- Antes de `login`, `refresh` o `logout`, el cliente obtiene `GET /api/auth/csrf` y envia el campo `token` como cabecera `X-XSRF-TOKEN`. Las llamadas de auth deben usar credenciales/cookies (`withCredentials: true`).
+- `POST /api/auth/refresh` rota la cookie y devuelve otro `accessToken`. Ante un `401`, el frontend hace un solo refresh y reintenta la solicitud original una vez; un `403` no dispara refresh.
+- `POST /api/auth/logout` revoca toda la familia del refresh token y borra la cookie.
+- `roles` y `mustChangePassword` vienen en login/refresh para navegacion y UX. El frontend no necesita decodificar el JWT y nunca debe tratar esos datos como autorizacion definitiva.
+- Cambios de rol, email, password y baja del empleado revocan los refresh tokens de la cuenta. El access token ya emitido puede vivir hasta su expiracion corta.
+- CORS usa una allowlist exacta en `FRONTEND_ORIGINS` y permite credenciales. Si frontend y API estan en sitios distintos, configurar `SameSite=None`, `Secure=true` y HTTPS.
 
 ## Modulos principales
 
@@ -89,7 +109,7 @@ Vacaciones y licencias usan `AbsenceStatus`. El empleado puede eliminar/cancelar
 
 - MySQL por JDBC.
 - SMTP, configurado para Gmail por `spring.mail`.
-- JWT con `jjwt`.
+- Access JWT con `jjwt` y refresh tokens opacos persistidos como hash.
 - Swagger/OpenAPI con Springdoc.
 - Postman/IntelliJ HTTP Client para pruebas manuales.
 - Railway se menciona como posible entorno demo en README, principalmente por variables de cleanup.
@@ -101,3 +121,5 @@ Vacaciones y licencias usan `AbsenceStatus`. El empleado puede eliminar/cancelar
 - Las rutas de empleado suelen usar DNI cuando se identifica un empleado desde API.
 - `docs/DER.pdf` es un artefacto importante, pero debe contrastarse con el codigo actual antes de implementar cambios.
 - Pendiente de confirmar: estrategia definitiva para crear el primer ADMIN y para manejar schema en ambientes con datos reales.
+- Pendiente de confirmar: dominio final del frontend y la API para elegir `SameSite=Strict` (mismo sitio) o `SameSite=None; Secure` (sitios distintos).
+- Pendiente de confirmar: politica de retencion/limpieza de sesiones de refresh expiradas y revocadas despues del MVP.

@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
+import com.HiveGroup.HiveRH.Common.Security.Auth.RefreshTokenService;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.GenreEnum;
@@ -54,6 +55,9 @@ class EmployeeServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @InjectMocks
     private EmployeeService employeeService;
 
@@ -94,6 +98,7 @@ class EmployeeServiceTest {
         assertEquals(employee.getTerminationDate(), assignment.getEndDate());
         assertEquals(EmployeeStatus.TERMINATED, response.status());
         verify(accountRepository).save(account);
+        verify(refreshTokenService).revokeAllForAccount(account);
         verify(employeeRepository).save(employee);
     }
 

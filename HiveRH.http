@@ -1,5 +1,5 @@
 ### HiveRH API smoke test
-### Ejecutar en este orden. La API usa JWT en todos los endpoints salvo /api/auth/**.
+### Ejecutar en este orden. Se necesita una cuenta ADMIN ya provisionada.
 ### Requisitos:
 ### 1. Aplicacion levantada en localhost:8080
 ### 2. Base MySQL configurada en .env
@@ -7,32 +7,34 @@
 
 @baseUrl = http://localhost:8080
 @json = application/json
-@user = qa_admin
-@email = qa_admin@hiverh.local
+@identifier = admin
 @password = ChangeMe123!
 
-### 1. Registrar usuario
-POST {{baseUrl}}/api/auth/register
-Content-Type: {{json}}
+### 1. Obtener CSRF
+# @name csrf
+GET {{baseUrl}}/api/auth/csrf
 
-{
-  "user": "{{user}}",
-  "email": "{{email}}",
-  "password": "{{password}}",
-  "rol": "ADMIN"
-}
+> {% client.global.set("csrfToken", response.body.token); %}
 
-### 2. Login y captura de token
+### 2. Login, cookie de refresh y captura de access token
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{json}}
+X-XSRF-TOKEN: {{csrfToken}}
 
 {
-  "identifier": "{{email}}",
+  "identifier": "{{identifier}}",
   "password": "{{password}}"
 }
 
-> {% client.global.set("token", response.body.token); %}
+> {% client.global.set("token", response.body.accessToken); %}
+
+### 2a. Rotar refresh y renovar access token
+# @name refresh
+POST {{baseUrl}}/api/auth/refresh
+X-XSRF-TOKEN: {{csrfToken}}
+
+> {% client.global.set("token", response.body.accessToken); %}
 
 ### 3. Crear departamento
 # @name createDepartment
@@ -138,13 +140,14 @@ Content-Type: {{json}}
 # @name employeeLogin
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{json}}
+X-XSRF-TOKEN: {{csrfToken}}
 
 {
   "identifier": "{{employeeDni}}",
   "password": "{{employeeDni}}"
 }
 
-> {% client.global.set("employeeToken", response.body.token); %}
+> {% client.global.set("employeeToken", response.body.accessToken); %}
 
 ### Jornada laboral - crear cronograma
 # @name createWorkSchedule

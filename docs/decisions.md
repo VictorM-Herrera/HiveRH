@@ -1,8 +1,35 @@
 # Decisions - HiveRH
 
-Ultima inspeccion: 2026-08-31.
+Ultima actualizacion: 2026-09-15.
 
 ## Decisiones registradas
+
+### Access JWT corto y refresh token rotativo en cookie
+
+- Fecha: septiembre 2026.
+- Decision: usar un access JWT corto en memoria del frontend y un refresh token opaco, rotativo y de un solo uso en cookie `HttpOnly`.
+- Motivo: limitar la exposicion del JWT, evitar persistir credenciales de larga duracion en Web Storage y permitir revocacion de sesiones.
+- Consecuencia: login/refresh devuelven `accessToken`, `roles`, `identifier`, `expiresInSeconds` y `mustChangePassword`; el frontend no necesita decodificar el JWT.
+- Consecuencia: el refresh token solo se persiste como SHA-256, mantiene expiracion absoluta por familia y la reutilizacion de uno rotado revoca la familia activa.
+- Consecuencia: cambios de rol, email, password y baja laboral revocan todas las sesiones de refresh de la cuenta.
+
+### CSRF y CORS para endpoints con cookie
+
+- Fecha: septiembre 2026.
+- Decision: exigir double-submit CSRF en `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/auth/logout`; el resto de la API sigue autenticado por bearer token.
+- Motivo: esos endpoints dependen de estado transportado automaticamente por el navegador o crean una sesion asociada a una cookie.
+- Consecuencia: el frontend debe pedir `GET /api/auth/csrf`, enviar `X-XSRF-TOKEN` y usar `withCredentials: true` en auth.
+- Decision: CORS acepta credenciales solo para la allowlist exacta `FRONTEND_ORIGINS`; no usar `*` con cookies.
+- Pendiente de confirmar: con dominios de produccion definitivos, elegir entre `SameSite=Strict` o `SameSite=None; Secure`.
+
+### Corte vertical para Frontend MVP 1.0
+
+- Fecha: 2026-09-15.
+- Decision: el primer frontend no intentara cubrir todos los modulos del backend. Se concentrara en autenticacion por rol, empleados, estructura organizacional minima, vacaciones, licencias con certificados y horarios laborales.
+- Motivo: disponer de recorridos completos y demostrables dentro del tiempo de la cursada, priorizando el objetivo SMART y las historias MUST del trabajo practico.
+- Consecuencia: payroll, WorkRequest, administracion avanzada de cuentas y el resto de las features no incluidas no deben generar pantallas para el MVP 1.0 sin una decision posterior.
+- Trazabilidad: `docs/frontend-mvp-v1.md` contiene alcance, brechas backend, epicas, historias, tareas y criterios de gestion para Jira.
+- Pendiente de confirmar: foto de perfil como SHOULD, prioridad exacta de horarios, necesidad de UI de cuentas/roles y exclusion total del payroll simplificado.
 
 ### Arquitectura package by feature
 

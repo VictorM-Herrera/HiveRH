@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Employee;
 
+import com.HiveGroup.HiveRH.Common.Security.Auth.RefreshTokenService;
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.EmployeeStatus;
@@ -55,6 +56,7 @@ public class EmployeeService {
     private final DepartamentRepository departamentRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileLectorService fileLectorService;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public EmployeeResponseDTO create(EmployeeCreateDTO employeeCreateDTO) {
@@ -142,11 +144,7 @@ public class EmployeeService {
         }
         closeActiveAssignments(employee, employee.getTerminationDate());
 
-        if (employee.getAccount() != null) {
-            AccountEntity account = employee.getAccount();
-            account.setStatus(AccountStatus.INACTIVE);
-            accountRepository.save(account);
-        }
+        disableLinkedAccount(employee);
 
         EmployeeEntity deletedEmployee = employeeRepository.save(employee);
 
@@ -180,6 +178,7 @@ public class EmployeeService {
                 employee.setTerminationDate(LocalDate.now());
             }
             closeActiveAssignments(employee, employee.getTerminationDate());
+            disableLinkedAccount(employee);
         } else {
             updateCurrentAssignment(
                     employee,
@@ -232,6 +231,7 @@ public class EmployeeService {
                 employee.setTerminationDate(LocalDate.now());
             }
             closeActiveAssignments(employee, employee.getTerminationDate());
+            disableLinkedAccount(employee);
         } else if (shouldUpdateAssignment) {
             updateCurrentAssignment(
                     employee,
@@ -391,6 +391,17 @@ public class EmployeeService {
 
     private boolean isProtectedAdminAccount(AccountEntity account) {
         return account != null && PROTECTED_ADMIN_USER.equalsIgnoreCase(account.getUser());
+    }
+
+    private void disableLinkedAccount(EmployeeEntity employee) {
+        if (employee.getAccount() == null) {
+            return;
+        }
+
+        AccountEntity account = employee.getAccount();
+        account.setStatus(AccountStatus.INACTIVE);
+        accountRepository.save(account);
+        refreshTokenService.revokeAllForAccount(account);
     }
 
     private EmployeeAssignmentEntity createAssignment(
