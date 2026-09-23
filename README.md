@@ -210,6 +210,7 @@ GET /api/employees?dni=43917621&page=0&size=10
 GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
 GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
 GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
+GET /api/vacations/me?status=PENDING&page=0&size=10
 GET /api/payrolls?periodId=1&page=0&size=10
 GET /api/payrolls/me?year=2026
 ```
@@ -236,6 +237,7 @@ Endpoints con paginacion:
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
+| Own vacations | `GET /api/vacations/me` |
 
 Ejemplos:
 
@@ -246,6 +248,7 @@ GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
+GET /api/vacations/me?status=APPROVED&page=0&size=10
 ```
 
 ## Reglas importantes
@@ -256,6 +259,7 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 - El empleado solo puede consultar sus propias liquidaciones confirmadas.
 - No se permite cargar dos liquidaciones activas para el mismo empleado en el mismo periodo.
 - El empleado solo puede consultar su propio cronograma laboral activo.
+- Una cuenta con empleado vinculado puede consultar solo sus propias solicitudes de vacaciones desde `GET /api/vacations/me`.
 - El empleado puede crear y consultar sus propias solicitudes de jornada, y cancelarlas solo si siguen PENDING.
 - STAFF y ADMIN pueden crear, modificar o cancelar cronogramas laborales sin borrar registros fisicos.
 - STAFF y ADMIN pueden aprobar o rechazar solicitudes de jornada; al aprobar se registra el revisor y se actualiza el cronograma laboral.

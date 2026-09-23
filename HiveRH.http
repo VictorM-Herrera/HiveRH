@@ -324,6 +324,10 @@ Content-Type: {{json}}
 GET {{baseUrl}}/api/vacations?dniEmployee={{employeeDni}}
 Authorization: Bearer {{token}}
 
+### Vacaciones - listar mis solicitudes
+GET {{baseUrl}}/api/vacations/me?status=PENDING&page=0&size=10
+Authorization: Bearer {{employeeToken}}
+
 ### 23. Actualizar vacaciones
 PUT {{baseUrl}}/api/vacations/{{vacationId}}
 Authorization: Bearer {{token}}

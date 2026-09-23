@@ -288,6 +288,7 @@ Utiliza multipart/form-data para permitir la carga de archivos desde el cliente 
 - El sistema valida empleado activo, fechas obligatorias, fecha final posterior a inicio, que la solicitud no sea posterior al inicio y que exista una anticipación mínima de 5 días hábiles.
 - También evita vacaciones superpuestas para el mismo empleado.
 - Permite listar por estado, rango de fechas, DNI del empleado y nombre completo.
+- Una cuenta autenticada con empleado vinculado consulta solo sus propias solicitudes desde `/api/vacations/me`, con paginación y filtros por estado o rango de fechas.
 
 ---
 
@@ -321,6 +322,7 @@ Endpoints paginados actuales:
 - GET /api/licenses
 - GET /api/payrolls
 - GET /api/vacations
+- GET /api/vacations/me
 
 ---
 
@@ -665,6 +667,12 @@ Anula una liquidación mientras su período siga abierto.
 ---
 
 ## Vacation
+
+### GET /api/vacations/me
+
+Lista en formato paginado las vacaciones del empleado vinculado a la cuenta autenticada.
+
+Permite aplicar filtros por estado y rango de fechas sin aceptar un identificador de otro empleado.
 
 ### GET /api/vacations
 

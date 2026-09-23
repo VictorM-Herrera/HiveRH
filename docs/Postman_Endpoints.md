@@ -1236,6 +1236,21 @@ Query params opcionales:
 - `fullName`: busqueda por nombre completo.
 - `page`, `size`, `sort`: paginacion opcional.
 
+### 57.1. Listar mis vacaciones
+
+```http
+GET {{baseUrl}}/api/vacations/me?status=PENDING&startDate=2026-07-01&endDate=2026-07-31&page=0&size=20
+```
+
+Auth: cualquier cuenta autenticada con empleado vinculado. La respuesta solo incluye solicitudes de ese empleado.
+
+Query params opcionales:
+
+- `status`: `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`.
+- `startDate`: inicio del rango; incluye vacaciones que se superpongan con el rango.
+- `endDate`: fin del rango; incluye vacaciones que se superpongan con el rango.
+- `page`, `size`: paginacion opcional.
+
 ### 58. Crear vacaciones
 
 ```http

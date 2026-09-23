@@ -1,6 +1,6 @@
 # Frontend MVP 1.0
 
-Ultima actualizacion: 2026-09-15.
+Ultima actualizacion: 2026-09-22.
 
 ## Proposito y fuente
 
@@ -70,7 +70,7 @@ La inspeccion original partio de `dev` y el contrato de autenticacion fue actual
 - `GET /api/employees/me` permite obtener el perfil del empleado vinculado.
 - La foto de perfil usa `PATCH /api/employees/picture` con `multipart/form-data` (`dni` y `file`) y `GET /api/employees/picture/{dni}` devuelve `image/png`.
 - `GET /api/work-schedules/me` cubre la consulta del horario propio.
-- **Bloqueante para US-03:** no existe un endpoint de listado de vacaciones propias para `EMPLOYEE`; `GET /api/vacations` esta restringido a `ADMIN` y `STAFF`.
+- `GET /api/vacations/me` permite listar en forma paginada las vacaciones del empleado vinculado y filtrar por estado o rango de fechas. `GET /api/vacations` sigue restringido a `ADMIN` y `STAFF`.
 - **Bloqueante para US-04:** no existe un endpoint de listado de licencias propias; un empleado solo puede consultar `GET /api/licenses/{id}` si ya conoce el ID.
 - Vacaciones se revisan mediante un `PUT` general; antes de integrar la bandeja hay que confirmar el payload exacto para aprobar/rechazar y evitar que el frontend envie campos que no corresponden.
 - Certificados mezclan rutas plurales y singulares: `POST /api/certificates`, `GET/DELETE /api/certificate/{id}` y `GET /api/certificate-info?id=...`.
@@ -186,7 +186,7 @@ Las estimaciones son iniciales. El equipo debe refinarlas en Planning Poker y aj
   - Formulario con fechas y validacion de rango.
   - Confirmacion y visualizacion del estado creado.
   - Mensaje claro ante superposicion o validacion del backend.
-- `US-03B` - Como Employee, quiero consultar el estado de mis vacaciones. `5 SP`, MUST, bloqueada por endpoint `/me` faltante.
+- `US-03B` - Como Employee, quiero consultar el estado de mis vacaciones. `5 SP`, MUST. Contrato backend disponible en `GET /api/vacations/me`.
 - `US-05A` - Como Staff, quiero listar, filtrar, aprobar o rechazar vacaciones pendientes. `8 SP`, MUST.
   - Confirmar contrato backend de revision antes de implementar.
   - Registrar comentario de revision cuando corresponda.
@@ -216,7 +216,7 @@ Las estimaciones son iniciales. El equipo debe refinarlas en Planning Poker y aj
 
 ### Issues de contrato backend necesarios
 
-- `BE-MVP-01` - Agregar consulta paginada de vacaciones propias, por ejemplo `GET /api/vacations/me`.
+- `BE-MVP-01` - Completado: consulta paginada de vacaciones propias en `GET /api/vacations/me`.
 - `BE-MVP-02` - Agregar consulta paginada de licencias propias, por ejemplo `GET /api/licenses/me`.
 - `BE-MVP-03` - Confirmar o separar el contrato de aprobar/rechazar vacaciones.
 - `BE-MVP-04` - Ejecutar smoke test de CORS/cookies con el origen real y cerrar variables de produccion. La allowlist backend ya esta implementada.

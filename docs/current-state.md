@@ -1,6 +1,6 @@
 # Current State - HiveRH
 
-Ultima actualizacion: 2026-09-15.
+Ultima actualizacion: 2026-09-22.
 
 ## Que funciona
 
@@ -21,6 +21,7 @@ Ultima actualizacion: 2026-09-15.
 - Work requests con restriccion de duplicados pendientes y registro de revisor.
 - Payroll nuevo con periodos, conceptos, detalles, snapshot de sueldo y estados.
 - Vacaciones/licencias usan `AbsenceStatus`.
+- `GET /api/vacations/me` permite consultar en forma paginada las vacaciones del empleado vinculado, con filtros por estado y rango de fechas.
 - Certificados PDF asociados a licencias.
 - Swagger/OpenAPI disponible en `/swagger-ui.html`.
 - Demo cleanup scheduler existe y es opt-in por variables.
@@ -33,7 +34,7 @@ Ultima actualizacion: 2026-09-15.
 - El alcance priorizado incluye autenticacion por rol, empleados, estructura organizacional minima, vacaciones, licencias/certificados y horarios laborales.
 - El detalle operativo y el backlog sugerido estan en `docs/frontend-mvp-v1.md`.
 - Pendiente de confirmar: stack y repositorio frontend, foto de perfil como parte de la demo, pantalla de cuentas/roles y alcance del payroll simplificado.
-- Brechas detectadas para el corte vertical: faltan listados `/me` de vacaciones y licencias; el contrato de revision de vacaciones debe confirmarse; la allowlist CORS debe probarse con el origen real del frontend.
+- Brechas detectadas para el corte vertical: falta el listado `/me` de licencias; el contrato de revision de vacaciones debe confirmarse; la allowlist CORS debe probarse con el origen real del frontend.
 
 ## Tests y scripts disponibles
 
@@ -47,6 +48,8 @@ Ultima actualizacion: 2026-09-15.
 - `src/test/java/com/HiveGroup/HiveRH/Features/WorkSchedule/WorkScheduleServiceTest.java`.
 - `src/test/java/com/HiveGroup/HiveRH/Features/WorkRequest/WorkRequestServiceTest.java`.
 - `src/test/java/com/HiveGroup/HiveRH/Features/Payroll/PayrollServiceTest.java`.
+- `src/test/java/com/HiveGroup/HiveRH/Features/Vacation/VacationControllerTest.java`.
+- `src/test/java/com/HiveGroup/HiveRH/Features/Vacation/VacationServiceTest.java`.
 - `HiveRH.http`: smoke test manual para IntelliJ HTTP Client, revisar rutas antes de usar.
 - `docs/tp3_v02_work/build_tp3_v02.py`: script auxiliar de documentacion.
 - `testdata/certificate-sample.pdf`: archivo de prueba para certificados.

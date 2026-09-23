@@ -102,6 +102,7 @@ public class Config {
 
                         .requestMatchers(HttpMethod.POST, "/api/certificates").authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/api/vacations/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/vacations").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/vacations").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/vacations/**").hasAnyRole("ADMIN", "STAFF")

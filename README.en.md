@@ -202,6 +202,7 @@ GET /api/employees?dni=43917621&page=0&size=10
 GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
 GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
 GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
+GET /api/vacations/me?status=PENDING&page=0&size=10
 GET /api/payrolls?periodId=1&page=0&size=10
 GET /api/payrolls/me?year=2026
 ```
@@ -228,6 +229,7 @@ Paginated endpoints:
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
+| Own vacations | `GET /api/vacations/me` |
 
 Examples:
 
@@ -238,6 +240,7 @@ GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
+GET /api/vacations/me?status=APPROVED&page=0&size=10
 ```
 
 ## Important Rules
@@ -248,6 +251,7 @@ GET /api/vacations?dniEmployee=43917621&page=0&size=10
 - Employees can only view their own confirmed payroll records.
 - Two active payroll records cannot be created for the same employee in the same period.
 - Employees can only view their own active work schedules.
+- An account linked to an employee can only view its own vacation requests through `GET /api/vacations/me`.
 - Employees can create and view their own daily work requests, and can cancel them only while they are PENDING.
 - `STAFF` and `ADMIN` can create, update, or cancel work schedules without physically deleting records.
 - `STAFF` and `ADMIN` can approve or reject daily work requests; approval records the reviewer and updates the work schedule.
