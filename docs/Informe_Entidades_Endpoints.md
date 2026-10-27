@@ -332,7 +332,7 @@ Endpoints paginados actuales:
 
 ### GET /api/auth/csrf
 
-Devuelve el token que debe enviarse como `X-XSRF-TOKEN` al invocar login, refresh o logout desde un navegador o cliente manual.
+Devuelve una representacion XOR enmascarada del token que debe enviarse sin modificar como `X-XSRF-TOKEN` al invocar login, refresh o logout desde un navegador o cliente manual. Es normal que no coincida visualmente con el valor base almacenado en la cookie `XSRF-TOKEN`; el backend lo desenmascara durante la validacion.
 
 ### POST /api/auth/login
 

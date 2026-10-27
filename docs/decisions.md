@@ -1,6 +1,6 @@
 # Decisions - HiveRH
 
-Ultima actualizacion: 2026-09-15.
+Ultima actualizacion: 2026-10-21.
 
 ## Decisiones registradas
 
@@ -18,7 +18,8 @@ Ultima actualizacion: 2026-09-15.
 - Fecha: septiembre 2026.
 - Decision: exigir double-submit CSRF en `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/auth/logout`; el resto de la API sigue autenticado por bearer token.
 - Motivo: esos endpoints dependen de estado transportado automaticamente por el navegador o crean una sesion asociada a una cookie.
-- Consecuencia: el frontend debe pedir `GET /api/auth/csrf`, enviar `X-XSRF-TOKEN` y usar `withCredentials: true` en auth.
+- Decision: `GET /api/auth/csrf` expone una representacion XOR enmascarada del token para mitigar BREACH. La cookie `XSRF-TOKEN` conserva el valor base y no tiene que coincidir visualmente con el cuerpo de la respuesta.
+- Consecuencia: el frontend debe conservar `response.token`, enviarlo sin modificar como `X-XSRF-TOKEN` y usar `withCredentials: true` en auth. No debe leer ni desenmascarar la cookie; Spring realiza el desenmascarado al validar el header.
 - Decision: CORS acepta credenciales solo para la allowlist exacta `FRONTEND_ORIGINS`; no usar `*` con cookies.
 - Pendiente de confirmar: con dominios de produccion definitivos, elegir entre `SameSite=Strict` o `SameSite=None; Secure`.
 

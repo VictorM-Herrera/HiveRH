@@ -36,7 +36,7 @@ public class AuthController {
 
     @GetMapping("/api/auth/csrf")
     @SecurityRequirements
-    @Operation(summary = "Get CSRF token", description = "Returns the CSRF token that browser clients must send in X-XSRF-TOKEN for login, refresh, and logout.")
+    @Operation(summary = "Get CSRF token", description = "Returns an XOR-masked CSRF token that browser clients must send unchanged in X-XSRF-TOKEN for login, refresh, and logout. Its value intentionally differs from the raw XSRF-TOKEN cookie.")
     public CsrfToken csrf(CsrfToken csrfToken) {
         return csrfToken;
     }
@@ -46,7 +46,7 @@ public class AuthController {
     @Operation(summary = "Log in", description = "Validates credentials, returns a short-lived access token, and sets a rotating refresh-token cookie.")
     public ResponseEntity<AuthResponse> authenticateUser(
             @Valid @RequestBody AuthRequest authRequest,
-            @Parameter(description = "Token returned by GET /api/auth/csrf")
+            @Parameter(description = "Masked token returned by GET /api/auth/csrf")
             @RequestHeader("X-XSRF-TOKEN") String csrfToken
     ) {
         AccountEntity account = authService.authenticate(authRequest);
@@ -63,7 +63,7 @@ public class AuthController {
     @Operation(summary = "Refresh access token", description = "Rotates the HttpOnly refresh-token cookie and returns a new short-lived access token.")
     public ResponseEntity<AuthResponse> refresh(
             HttpServletRequest request,
-            @Parameter(description = "Token returned by GET /api/auth/csrf")
+            @Parameter(description = "Masked token returned by GET /api/auth/csrf")
             @RequestHeader("X-XSRF-TOKEN") String csrfToken
     ) {
         String rawRefreshToken = refreshTokenCookieService.read(request)
@@ -81,7 +81,7 @@ public class AuthController {
     @Operation(summary = "Log out", description = "Revokes the refresh-token family and clears its cookie.")
     public ResponseEntity<Void> logout(
             HttpServletRequest request,
-            @Parameter(description = "Token returned by GET /api/auth/csrf")
+            @Parameter(description = "Masked token returned by GET /api/auth/csrf")
             @RequestHeader("X-XSRF-TOKEN") String csrfToken
     ) {
         refreshTokenCookieService.read(request).ifPresent(refreshTokenService::revoke);

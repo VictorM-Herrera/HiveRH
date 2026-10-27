@@ -13,6 +13,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -43,7 +45,8 @@ public class Config {
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            CookieCsrfTokenRepository csrfTokenRepository
+            CookieCsrfTokenRepository csrfTokenRepository,
+            CsrfTokenRequestHandler csrfTokenRequestHandler
     ) throws Exception {
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
@@ -121,8 +124,8 @@ public class Config {
                         .anyRequest().authenticated())
                 .cors(cors -> {})
                 .csrf(csrf -> csrf
-                        .spa()
                         .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
                         .requireCsrfProtectionMatcher(cookieAuthRequestMatcher()))
                 .headers(headers
                         -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
@@ -149,6 +152,14 @@ public class Config {
                 .secure(secure)
                 .sameSite(sameSite));
         return repository;
+    }
+
+    @Bean
+    public CsrfTokenRequestHandler csrfTokenRequestHandler() {
+        XorCsrfTokenRequestAttributeHandler requestHandler =
+                new XorCsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName(null);
+        return requestHandler;
     }
 
     @Bean

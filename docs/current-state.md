@@ -1,12 +1,12 @@
 # Current State - HiveRH
 
-Ultima actualizacion: 2026-09-22.
+Ultima actualizacion: 2026-10-21.
 
 ## Que funciona
 
 - Proyecto Spring Boot con Maven Wrapper y Java 17.
 - Autenticacion stateless hibrida: access JWT corto y refresh token opaco rotativo en cookie `HttpOnly`.
-- `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/auth/logout` implementados; los tres `POST` requieren `X-XSRF-TOKEN`.
+- `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/refresh` y `POST /api/auth/logout` implementados; los tres `POST` requieren en `X-XSRF-TOKEN` el token XOR enmascarado devuelto por el `GET`.
 - Refresh tokens persistidos solo como SHA-256, con expiracion absoluta por familia, bloqueo pesimista para rotacion y deteccion de reutilizacion.
 - CORS configurable por allowlist exacta y con credenciales habilitadas.
 - `POST /api/auth/register` restringido a `ADMIN`.

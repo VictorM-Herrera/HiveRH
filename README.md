@@ -148,6 +148,8 @@ Authorization: Bearer <token>
 4. Ante el primer `401`, ejecutar una sola vez `POST /api/auth/refresh` con la cabecera CSRF y cookies habilitadas. La API rota la cookie y devuelve otro access token.
 5. Ejecutar `POST /api/auth/logout` para revocar la familia de refresh tokens y borrar la cookie.
 
+El campo `token` devuelto por `/api/auth/csrf` esta enmascarado con XOR para mitigar BREACH y por eso no coincide visualmente con el valor base de la cookie `XSRF-TOKEN`. El cliente debe conservar el campo de la respuesta y enviarlo sin modificar en `X-XSRF-TOKEN`; no debe leer, comparar ni desenmascarar la cookie. El backend realiza el desenmascarado durante la validacion.
+
 No guardar access ni refresh tokens en `localStorage` o `sessionStorage`. La respuesta de login/refresh incluye `roles` para navegacion y presentacion, pero el backend sigue siendo la autoridad de permisos. El contrato frontend completo esta en `docs/frontend-mvp-v1.md`.
 
 Para despliegues donde frontend y API esten en sitios distintos se debe usar `REFRESH_COOKIE_SAME_SITE=None`, `REFRESH_COOKIE_SECURE=true`, HTTPS y una allowlist exacta en `FRONTEND_ORIGINS`. Con frontend y API en el mismo sitio se prefiere `Strict`.

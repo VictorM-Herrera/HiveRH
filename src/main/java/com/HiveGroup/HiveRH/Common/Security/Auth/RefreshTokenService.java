@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +28,7 @@ public class RefreshTokenService {
     private final Clock clock;
     private final SecureRandom secureRandom;
 
+    @Autowired
     public RefreshTokenService(
             RefreshTokenRepository refreshTokenRepository,
             @Value("${hiverh.auth.refresh-token-expiration-ms}") long refreshTokenExpirationMs

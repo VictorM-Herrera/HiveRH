@@ -39,7 +39,7 @@ Este recorte aplica al frontend y al MVP 1.0; no elimina features del backend. P
 
 - El access token es un JWT corto: se devuelve en `accessToken`, se conserva solo en memoria y se envia como `Authorization: Bearer`.
 - El refresh token es opaco, rotativo y de un solo uso. El navegador lo recibe como cookie `HttpOnly`; JavaScript no debe intentar leerlo y la base guarda solo su hash.
-- Antes de `login`, `refresh` o `logout`, el cliente obtiene `GET /api/auth/csrf` y envia el campo `token` como cabecera `X-XSRF-TOKEN`. Las llamadas de auth deben usar credenciales/cookies (`withCredentials: true`).
+- Antes de `login`, `refresh` o `logout`, el cliente obtiene `GET /api/auth/csrf` y envia el campo `token` sin modificar como cabecera `X-XSRF-TOKEN`. Ese campo esta enmascarado con XOR y no coincide visualmente con la cookie base `XSRF-TOKEN`; el backend lo desenmascara al validarlo. Las llamadas de auth deben usar credenciales/cookies (`withCredentials: true`).
 - `POST /api/auth/refresh` rota la cookie y devuelve otro `accessToken`. Ante un `401`, el frontend hace un solo refresh y reintenta la solicitud original una vez; un `403` no dispara refresh.
 - `POST /api/auth/logout` revoca toda la familia del refresh token y borra la cookie.
 - `roles` y `mustChangePassword` vienen en login/refresh para navegacion y UX. El frontend no necesita decodificar el JWT y nunca debe tratar esos datos como autorizacion definitiva.

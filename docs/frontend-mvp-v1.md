@@ -66,7 +66,7 @@ La inspeccion original partio de `dev` y el contrato de autenticacion fue actual
 
 - Login y refresh devuelven `accessToken`, `tokenType`, `expiresInSeconds`, `identifier`, `roles` y `mustChangePassword`. El frontend no necesita decodificar el JWT.
 - El refresh token se entrega solamente mediante la cookie `hiverh_refresh`, con `HttpOnly`, `Path=/api/auth` y politica `Secure`/`SameSite` configurable por ambiente.
-- `GET /api/auth/csrf` entrega el token CSRF requerido por `POST /api/auth/login`, `/refresh` y `/logout`.
+- `GET /api/auth/csrf` entrega un token CSRF XOR enmascarado requerido por `POST /api/auth/login`, `/refresh` y `/logout`. Su valor difiere intencionalmente de la cookie base `XSRF-TOKEN`.
 - `GET /api/employees/me` permite obtener el perfil del empleado vinculado.
 - La foto de perfil usa `PATCH /api/employees/picture` con `multipart/form-data` (`dni` y `file`) y `GET /api/employees/picture/{dni}` devuelve `image/png`.
 - `GET /api/work-schedules/me` cubre la consulta del horario propio.
@@ -107,7 +107,7 @@ La inspeccion original partio de `dev` y el contrato de autenticacion fue actual
 6. Si refresh falla, limpiar el estado en memoria y volver a login. Un `403` significa falta de permisos y no debe disparar refresh.
 7. Logout llama `POST /api/auth/logout` con CSRF y credenciales, y limpia siempre el estado local aunque falle la red.
 
-El token CSRF se toma del cuerpo de `GET /api/auth/csrf`, no se debe depender del interceptor XSRF automatico del framework porque frontend y API pueden tener origenes diferentes.
+El token CSRF se toma del cuerpo de `GET /api/auth/csrf` y se envia sin modificar. Es una representacion XOR enmascarada: no debe compararse con la cookie `XSRF-TOKEN`, leerse desde ella ni desenmascararse en el frontend. Spring realiza el desenmascarado al validar `X-XSRF-TOKEN`. No se debe depender del interceptor XSRF automatico del framework porque frontend y API pueden tener origenes diferentes.
 
 ### Ambientes y cookies
 

@@ -92,7 +92,7 @@ Nota: tambien existen endpoints tecnicos de Swagger/OpenAPI (`/v3/api-docs`, `/s
 GET {{baseUrl}}/api/auth/csrf
 ```
 
-Guardar el campo `token` de la respuesta como `{{csrfToken}}`. Postman debe conservar las cookies del host en su cookie jar. Login, refresh y logout requieren:
+Guardar el campo `token` de la respuesta como `{{csrfToken}}`. El valor esta enmascarado con XOR y es normal que no coincida con la cookie base `XSRF-TOKEN`. Postman debe conservar las cookies del host en su cookie jar, pero no debe copiar ni desenmascarar el valor de esa cookie. Login, refresh y logout requieren enviar sin modificar:
 
 ```text
 X-XSRF-TOKEN: {{csrfToken}}
