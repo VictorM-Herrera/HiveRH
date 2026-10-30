@@ -1,6 +1,7 @@
 package com.HiveGroup.HiveRH.Common.Security.Auth;
 
 import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
 import com.HiveGroup.HiveRH.Features.Account.AccountEntity;
 import com.HiveGroup.HiveRH.Features.Account.AccountRepository;
@@ -8,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +17,9 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final AccountRepository accountRepository;
     private final AuthenticationManager authenticationManager;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserDetails authenticate(AuthRequest input) {
+    public AccountEntity authenticate(AuthRequest input) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         input.identifier(),
@@ -32,6 +32,11 @@ public class AuthService {
             throw new DisabledException("Cuenta deshabilitada");
         }
         return account;
+    }
+
+    public boolean mustChangePassword(AccountEntity account) {
+        return account.getRol() == RolEnum.EMPLOYEE
+                && passwordEncoder.matches(account.getUsername(), account.getPassword());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.HiveGroup.HiveRH.Features.Account;
 
+import com.HiveGroup.HiveRH.Common.Security.Auth.RefreshTokenService;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.AccountStatus;
 import com.HiveGroup.HiveRH.Common.Utils.Enums.RolEnum;
 import com.HiveGroup.HiveRH.Features.Account.DTO.NewAccountDTO;
@@ -36,6 +37,9 @@ class AccountServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AccountService accountService;
@@ -101,6 +105,7 @@ class AccountServiceTest {
         assertEquals(RolEnum.EMPLOYEE, target.getRol());
         assertEquals(expected, response);
         verify(accountRepository).save(target);
+        verify(refreshTokenService).revokeAllForAccount(target);
     }
 
     @Test
@@ -122,6 +127,7 @@ class AccountServiceTest {
         assertEquals(RolEnum.ADMIN, target.getRol());
         assertEquals(expected, response);
         verify(accountRepository).save(target);
+        verify(refreshTokenService).revokeAllForAccount(target);
     }
 
     @Test
