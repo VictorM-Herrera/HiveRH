@@ -2,7 +2,7 @@
 
 [Version en espanol](README.md)
 
-HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, payroll records, leaves, vacations, suspensions, internal complaints, and certificates.
+HiveRH is a REST API for Human Resources management. It provides endpoints to manage employees, user accounts, roles, organizational structure, work schedules, daily work requests, payroll records, leaves, vacations, and certificates.
 
 The project is designed as an academic MVP. The main goal is to provide clear business rules, JWT authentication, role-based permissions, and endpoints that are easy to test from Postman or Swagger.
 
@@ -12,7 +12,6 @@ Detailed documentation is available in the `docs` folder:
 
 - `docs/Requerimiento.md`: functional scope and general system rules.
 - `docs/Informe_Entidades_Endpoints.md`: full walkthrough of entities, endpoints, and the recommended testing flow for Postman or project presentation.
-- `docs/Conceptual.md`: conceptual domain model.
 - `docs/DER.pdf`: entity-relationship diagram.
 
 This README is a quick guide to run and understand the project. For the complete endpoint details, check the full report.
@@ -36,12 +35,17 @@ The application reads its configuration from `src/main/resources/application.yam
 | `EMAIL_ADDRESS` | SMTP sender email address | `hiverh.notifications@gmail.com` |
 | `EMAIL_PASSWORD` | SMTP application password | `abcd efgh ijkl mnop` |
 | `SECRET` | Secret key used to sign JWT tokens | `super-secret-key-at-least-32-bytes` |
-| `EXPIRATION` | Token duration in milliseconds | `86400000` |
+| `EXPIRATION` | Access-token duration in milliseconds | `600000` |
+| `REFRESH_EXPIRATION` | Refresh-token family lifetime in milliseconds | `28800000` |
+| `REFRESH_COOKIE_NAME` | HttpOnly refresh cookie name | `hiverh_refresh` |
+| `REFRESH_COOKIE_SECURE` | Sends the refresh cookie only over HTTPS | `true` |
+| `REFRESH_COOKIE_SAME_SITE` | Authentication cookie SameSite policy | `Strict` |
+| `FRONTEND_ORIGINS` | Comma-separated exact CORS allowlist | `http://localhost:4200` |
 | `DEMO_CLEANUP_ENABLED` | Enables automatic demo data cleanup | `false` |
 | `DEMO_CLEANUP_DAILY_CRON` | Daily cleanup cron expression | `0 0 4 * * *` |
 | `DEMO_CLEANUP_ZONE` | Cron time zone | `UTC` |
 | `DEMO_CLEANUP_MAX_RECORDS` | Maximum record count before cleanup runs | `5000` |
-| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Also deletes branches, departments, positions, and variations | `true` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Also deletes branches, departments, positions, and payroll concepts | `true` |
 | `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Comma-separated users that are never deleted | `admin` |
 
 Example:
@@ -53,7 +57,12 @@ DB_PASSWORD=admin
 EMAIL_ADDRESS=hiverh.notifications@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=super-secret-key-at-least-32-bytes
-EXPIRATION=86400000
+EXPIRATION=600000
+REFRESH_EXPIRATION=28800000
+REFRESH_COOKIE_NAME=hiverh_refresh
+REFRESH_COOKIE_SECURE=false
+REFRESH_COOKIE_SAME_SITE=Strict
+FRONTEND_ORIGINS=http://localhost:4200
 DEMO_CLEANUP_ENABLED=false
 DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
 DEMO_CLEANUP_ZONE=UTC
@@ -123,20 +132,22 @@ On Windows:
 
 ## Authentication
 
-The API uses JWT. To call protected endpoints:
+The API uses a short-lived access JWT and a rotating opaque refresh token in an HttpOnly cookie. For browser clients:
 
-1. Execute `POST /api/auth/login`.
-2. Copy the returned token.
-3. Send the token in each protected request:
+1. Call `GET /api/auth/csrf` with credentials enabled and retain the response `token`.
+2. Call `POST /api/auth/login` with credentials enabled and send that value as `X-XSRF-TOKEN`.
+3. Keep `accessToken` in memory only and send it in each protected request:
 
 ```http
 Authorization: Bearer <token>
 ```
 
+On the first `401`, call `POST /api/auth/refresh` once with the CSRF header and credentials, then retry the original request once. Call `POST /api/auth/logout` to revoke the refresh family. Do not store access or refresh tokens in Web Storage.
+
 Main roles:
 
 - `ADMIN`: manages the whole system.
-- `RRHH`: manages employees, leaves, vacations, suspensions, complaints, and payroll records.
+- `STAFF`: manages employees, work schedules, daily work requests, leaves, vacations, and payroll records.
 - `EMPLOYEE`: can view and operate on their own resources when the business rule allows it.
 
 ## Swagger
@@ -154,9 +165,10 @@ Recommended Swagger testing flow:
 2. Configure the environment variables.
 3. Run the application.
 4. Open `http://localhost:8080/swagger-ui.html`.
-5. Execute `POST /api/auth/login` with an existing account.
-6. Copy the token from the response.
-7. Press `Authorize` and paste only the JWT token.
+5. Execute `GET /api/auth/csrf` and copy the response token.
+6. Execute `POST /api/auth/login` with an existing account and send that value as `X-XSRF-TOKEN`.
+7. Copy `accessToken` from the response.
+8. Press `Authorize` and paste only the access JWT.
 
 Once authorized, Swagger sends the JWT when calling protected endpoints.
 
@@ -172,13 +184,14 @@ The complete endpoint details are available in `docs/Informe_Entidades_Endpoints
 | Branches | `/api/branches` |
 | Departments | `/api/departments` |
 | Positions | `/api/positions` |
-| Variations | `/api/variations` |
+| Work Schedules | `/api/work-schedules` |
+| Work Requests | `/api/work-requests` |
+| Payroll Periods | `/api/payroll-periods` |
+| Payroll Concepts | `/api/payroll-concepts` |
 | Payrolls | `/api/payrolls` |
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
 | Vacations | `/api/vacations` |
-| Complaints | `/api/complaints` |
-| Suspensions | `/api/suspensions` |
 
 Filters in `GET` endpoints are sent as query params. It is not necessary to send every filter: one, several, or none can be provided.
 
@@ -186,8 +199,12 @@ Examples:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
-GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
-GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
+GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
+GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
+GET /api/vacations/me?status=PENDING&page=0&size=10
+GET /api/payrolls?periodId=1&page=0&size=10
+GET /api/payrolls/me?year=2026
 ```
 
 ## Pagination
@@ -207,29 +224,42 @@ Paginated endpoints:
 | Module | Endpoint |
 |---|---|
 | Employees | `GET /api/employees` |
+| Work Schedules | `GET /api/work-schedules` |
+| Work Requests | `GET /api/work-requests` |
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
+| Own vacations | `GET /api/vacations/me` |
 
 Examples:
 
 ```http
 GET /api/employees?page=0&size=10
+GET /api/work-schedules?branchId=1&from=2026-08-01&to=2026-08-31&page=0&size=10
+GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
+GET /api/vacations/me?status=APPROVED&page=0&size=10
 ```
 
 ## Important Rules
 
 - An employee cannot view another employee's payroll records.
-- `RRHH` and `ADMIN` can view any employee payroll records.
-- Only `RRHH` and `ADMIN` can create, update, or delete payroll records.
-- Two payroll records cannot be created for the same employee in the same month.
-- Employees can delete their own leave or vacation requests only if they have not been accepted.
-- `RRHH` does not delete leave or vacation requests; it manages, approves, or rejects them.
+- `STAFF` and `ADMIN` can view any employee payroll records.
+- Only `STAFF` and `ADMIN` can create, update, confirm, or cancel payroll records.
+- Employees can only view their own confirmed payroll records.
+- Two active payroll records cannot be created for the same employee in the same period.
+- Employees can only view their own active work schedules.
+- An account linked to an employee can only view its own vacation requests through `GET /api/vacations/me`.
+- Employees can create and view their own daily work requests, and can cancel them only while they are PENDING.
+- `STAFF` and `ADMIN` can create, update, or cancel work schedules without physically deleting records.
+- `STAFF` and `ADMIN` can approve or reject daily work requests; approval records the reviewer and updates the work schedule.
+- Two active work schedules cannot overlap for the same employee, date, and time range.
+- Two PENDING work requests of the same type cannot exist for the same employee and target date.
+- Employees can delete their own leave or vacation requests only if they are still PENDING.
+- `STAFF` does not delete leave or vacation requests; it manages, approves, or rejects them.
 - `ADMIN` can manage all resources.
-- Internal complaints can only be listed or reviewed by `RRHH` or `ADMIN`.
 
 ## Common Errors
 

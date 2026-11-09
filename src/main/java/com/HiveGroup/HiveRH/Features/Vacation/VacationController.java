@@ -1,6 +1,7 @@
 package com.HiveGroup.HiveRH.Features.Vacation;
 
 import com.HiveGroup.HiveRH.Common.Utils.DTOs.PageResponseDTO;
+import com.HiveGroup.HiveRH.Common.Utils.Enums.AbsenceStatus;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationFilterDTO;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationRequest;
 import com.HiveGroup.HiveRH.Features.Vacation.DTO.VacationResponse;
@@ -16,16 +17,37 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/vacations")
 @RequiredArgsConstructor
-@Tag(name = "09 Vacations", description = "Vacation requests and records.")
+@Tag(name = "12 Vacations", description = "Vacation requests and records.")
 public class VacationController {
 
     private final VacationService vacationService;
 
+    @GetMapping("/me")
+    @PreAuthorize("@securityAuthorizationService.hasLinkedEmployee()")
+    @Operation(summary = "List my vacations", description = "Returns paginated vacation requests for the employee linked to the authenticated account, with optional status and date range filters.")
+    public ResponseEntity<PageResponseDTO<VacationResponse>> findMine(
+            @RequestParam(value = "status", required = false) AbsenceStatus status,
+            @RequestParam(value = "startDate", required = false) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) LocalDate endDate,
+            @ParameterObject Pageable pageable) {
+
+        PageResponseDTO<VacationResponse> response = vacationService.findCurrentEmployeeVacations(
+                status,
+                startDate,
+                endDate,
+                pageable
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
-    @Operation(summary = "List vacations", description = "Returns paginated vacations and supports filtering by approval status, date range, DNI, and full name.")
+    @Operation(summary = "List vacations", description = "Returns paginated vacations and supports filtering by status, date range, DNI, and full name.")
     public ResponseEntity<PageResponseDTO<VacationResponse>> findAll(
             @ParameterObject VacationFilterDTO filters,
             @ParameterObject Pageable pageable) {

@@ -3,7 +3,7 @@ package com.HiveGroup.HiveRH.Features.Certificate;
 
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.FileProcessingException;
 import com.HiveGroup.HiveRH.Common.Utils.Exceptions.EntityNotFoundException;
-import com.HiveGroup.HiveRH.Common.Utils.Services.PdfLectorService;
+import com.HiveGroup.HiveRH.Common.Utils.Services.FileLectorService;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.CertificateDTO;
 import com.HiveGroup.HiveRH.Features.Certificate.DTO.ResponseCertificateDTO;
 import com.HiveGroup.HiveRH.Features.License.LicenseEntity;
@@ -21,7 +21,7 @@ import java.util.List;
 @Service
 public class CertificateService {
     CertificateRepository certificateRepository;
-    PdfLectorService pdfLectorService;
+    FileLectorService pdfLectorService;
     LicenseRepository licenseRepository;
     CertificateMapper certificateMapper;
 

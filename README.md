@@ -2,7 +2,7 @@
 
 [English version](README.en.md)
 
-HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, liquidaciones de sueldo, licencias, vacaciones, suspensiones, denuncias y certificados.
+HiveRH es una API REST para la gestion de Recursos Humanos. Permite administrar empleados, cuentas de usuario, roles, estructura organizacional, cronogramas laborales, solicitudes de jornada, liquidaciones de sueldo, licencias, vacaciones y certificados.
 
 El proyecto esta planteado como un MVP academico: el foco esta en tener reglas de negocio claras, autenticacion con JWT, permisos por rol y endpoints faciles de probar desde Postman o Swagger.
 
@@ -11,8 +11,8 @@ El proyecto esta planteado como un MVP academico: el foco esta en tener reglas d
 La documentacion detallada esta en la carpeta `docs`:
 
 - `docs/Requerimiento.md`: alcance funcional y reglas generales del sistema.
+- `docs/frontend-mvp-v1.md`: alcance, brechas y backlog sugerido para el desarrollo del frontend y la presentacion del MVP 1.0.
 - `docs/Informe_Entidades_Endpoints.md`: recorrido completo del sistema, entidades, endpoints y flujo recomendado para Postman/defensa.
-- `docs/Conceptual.md`: modelo conceptual del dominio.
 - `docs/DER.pdf`: diagrama entidad-relacion.
 
 Este README queda como guia rapida para levantar y entender el proyecto. Para el detalle completo de endpoints conviene ir al informe.
@@ -36,12 +36,17 @@ La aplicacion toma su configuracion desde `src/main/resources/application.yaml`.
 | `EMAIL_ADDRESS` | Email usado como remitente SMTP | `hiverh.notificaciones@gmail.com` |
 | `EMAIL_PASSWORD` | Password de aplicacion del email SMTP | `abcd efgh ijkl mnop` |
 | `SECRET` | Clave para firmar JWT | `clave-super-secreta-de-32-bytes-minimo` |
-| `EXPIRATION` | Duracion del token en milisegundos | `86400000` |
+| `EXPIRATION` | Duracion del access token JWT en milisegundos | `600000` |
+| `REFRESH_EXPIRATION` | Duracion maxima de una familia de refresh tokens en milisegundos | `28800000` |
+| `REFRESH_COOKIE_NAME` | Nombre de la cookie HttpOnly de refresh | `hiverh_refresh` |
+| `REFRESH_COOKIE_SECURE` | Envia la cookie solo por HTTPS; usar `false` unicamente en local HTTP | `true` |
+| `REFRESH_COOKIE_SAME_SITE` | Politica SameSite de las cookies de auth | `Strict` |
+| `FRONTEND_ORIGINS` | Allowlist CORS exacta, separada por comas | `http://localhost:4200` |
 | `DEMO_CLEANUP_ENABLED` | Activa la limpieza automatica de datos demo | `false` |
 | `DEMO_CLEANUP_DAILY_CRON` | Cron diario de limpieza | `0 0 4 * * *` |
 | `DEMO_CLEANUP_ZONE` | Zona horaria del cron | `UTC` |
 | `DEMO_CLEANUP_MAX_RECORDS` | Cantidad maxima de registros antes de limpiar | `5000` |
-| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Tambien borra sucursales, departamentos, puestos y variaciones | `true` |
+| `DEMO_CLEANUP_INCLUDE_CATALOG_DATA` | Tambien borra sucursales, departamentos, puestos y conceptos de liquidacion | `true` |
 | `DEMO_CLEANUP_PRESERVED_ACCOUNT_USERS` | Usuarios que nunca se borran, separados por coma | `admin` |
 
 Ejemplo:
@@ -53,7 +58,12 @@ DB_PASSWORD=admin
 EMAIL_ADDRESS=hiverh.notificaciones@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 SECRET=clave-super-secreta-de-32-bytes-minimo
-EXPIRATION=86400000
+EXPIRATION=600000
+REFRESH_EXPIRATION=28800000
+REFRESH_COOKIE_NAME=hiverh_refresh
+REFRESH_COOKIE_SECURE=false
+REFRESH_COOKIE_SAME_SITE=Strict
+FRONTEND_ORIGINS=http://localhost:4200
 DEMO_CLEANUP_ENABLED=false
 DEMO_CLEANUP_DAILY_CRON=0 0 4 * * *
 DEMO_CLEANUP_ZONE=UTC
@@ -123,20 +133,31 @@ En Windows:
 
 ## Autenticacion
 
-La API usa JWT. Para consumir endpoints protegidos:
+La API usa un access token JWT corto y un refresh token opaco rotativo. El access token se devuelve en JSON; el refresh token se guarda en una cookie `HttpOnly`, nunca se expone al JavaScript del frontend y en la base solo se persiste su hash.
 
-1. Ejecutar `POST /api/auth/login`.
-2. Copiar el token recibido.
-3. Enviar el token en cada request protegido:
+Flujo para clientes web:
+
+1. Ejecutar `GET /api/auth/csrf` con credenciales/cookies habilitadas y conservar `token` de la respuesta.
+2. Ejecutar `POST /api/auth/login` enviando ese valor en `X-XSRF-TOKEN`, tambien con credenciales habilitadas.
+3. Conservar `accessToken` solo en memoria y enviarlo en cada request protegido:
 
 ```http
 Authorization: Bearer <token>
 ```
 
+4. Ante el primer `401`, ejecutar una sola vez `POST /api/auth/refresh` con la cabecera CSRF y cookies habilitadas. La API rota la cookie y devuelve otro access token.
+5. Ejecutar `POST /api/auth/logout` para revocar la familia de refresh tokens y borrar la cookie.
+
+El campo `token` devuelto por `/api/auth/csrf` esta enmascarado con XOR para mitigar BREACH y por eso no coincide visualmente con el valor base de la cookie `XSRF-TOKEN`. El cliente debe conservar el campo de la respuesta y enviarlo sin modificar en `X-XSRF-TOKEN`; no debe leer, comparar ni desenmascarar la cookie. El backend realiza el desenmascarado durante la validacion.
+
+No guardar access ni refresh tokens en `localStorage` o `sessionStorage`. La respuesta de login/refresh incluye `roles` para navegacion y presentacion, pero el backend sigue siendo la autoridad de permisos. El contrato frontend completo esta en `docs/frontend-mvp-v1.md`.
+
+Para despliegues donde frontend y API esten en sitios distintos se debe usar `REFRESH_COOKIE_SAME_SITE=None`, `REFRESH_COOKIE_SECURE=true`, HTTPS y una allowlist exacta en `FRONTEND_ORIGINS`. Con frontend y API en el mismo sitio se prefiere `Strict`.
+
 Roles principales:
 
 - `ADMIN`: administra todo el sistema.
-- `RRHH`: gestiona empleados, licencias, vacaciones, suspensiones, denuncias y liquidaciones.
+- `STAFF`: gestiona empleados, cronogramas laborales, solicitudes de jornada, licencias, vacaciones y liquidaciones.
 - `EMPLOYEE`: consulta y opera sobre recursos propios cuando la regla de negocio lo permite.
 
 ## Swagger
@@ -154,9 +175,10 @@ Flujo recomendado para probar desde Swagger:
 2. Configurar las variables de entorno.
 3. Ejecutar la aplicacion.
 4. Entrar a `http://localhost:8080/swagger-ui.html`.
-5. Ejecutar `POST /api/auth/login` con una cuenta existente.
-6. Copiar el token de la respuesta.
-7. Presionar `Authorize` y pegar solo el token JWT.
+5. Ejecutar `GET /api/auth/csrf` y copiar `token` de la respuesta.
+6. Ejecutar `POST /api/auth/login` con una cuenta existente y enviar el token CSRF en la cabecera `X-XSRF-TOKEN`.
+7. Copiar `accessToken` de la respuesta.
+8. Presionar `Authorize` y pegar solo el access token JWT.
 
 Una vez autorizado, Swagger envia el JWT en los endpoints protegidos.
 
@@ -172,13 +194,14 @@ El detalle completo de endpoints esta en `docs/Informe_Entidades_Endpoints.md`. 
 | Branches | `/api/branches` |
 | Departments | `/api/departments` |
 | Positions | `/api/positions` |
-| Variations | `/api/variations` |
+| Work Schedules | `/api/work-schedules` |
+| Work Requests | `/api/work-requests` |
+| Payroll Periods | `/api/payroll-periods` |
+| Payroll Concepts | `/api/payroll-concepts` |
 | Payrolls | `/api/payrolls` |
 | Licenses | `/api/licenses` |
 | Certificates | `/api/certificates` |
 | Vacations | `/api/vacations` |
-| Complaints | `/api/complaints` |
-| Suspensions | `/api/suspensions` |
 
 Los filtros en endpoints `GET` se envian por query params. No hace falta mandar todos los filtros: se puede enviar uno, varios o ninguno.
 
@@ -186,8 +209,12 @@ Ejemplos:
 
 ```http
 GET /api/employees?dni=43917621&page=0&size=10
-GET /api/vacations?accepted=false&fullName=Juan Perez&page=0&size=10
-GET /api/payrolls/employee/43917621?startDate=2026-01-01&endDate=2026-06-30
+GET /api/work-schedules/me?from=2026-08-01&to=2026-08-31
+GET /api/work-requests?departmentId=2&status=PENDING&page=0&size=10
+GET /api/vacations?status=PENDING&fullName=Juan Perez&page=0&size=10
+GET /api/vacations/me?status=PENDING&page=0&size=10
+GET /api/payrolls?periodId=1&page=0&size=10
+GET /api/payrolls/me?year=2026
 ```
 
 ## Paginacion
@@ -207,29 +234,42 @@ Endpoints con paginacion:
 | Modulo | Endpoint |
 |---|---|
 | Employees | `GET /api/employees` |
+| Work Schedules | `GET /api/work-schedules` |
+| Work Requests | `GET /api/work-requests` |
 | Licenses | `GET /api/licenses` |
 | Payrolls | `GET /api/payrolls` |
 | Vacations | `GET /api/vacations` |
+| Own vacations | `GET /api/vacations/me` |
 
 Ejemplos:
 
 ```http
 GET /api/employees?page=0&size=10
+GET /api/work-schedules?branchId=1&from=2026-08-01&to=2026-08-31&page=0&size=10
+GET /api/work-requests?status=PENDING&page=0&size=10
 GET /api/licenses?status=PENDING&page=0&size=10&sort=requestDate,desc
 GET /api/payrolls?page=0&size=10
 GET /api/vacations?dniEmployee=43917621&page=0&size=10
+GET /api/vacations/me?status=APPROVED&page=0&size=10
 ```
 
 ## Reglas importantes
 
 - Un empleado no puede consultar liquidaciones de otro empleado.
-- RRHH y ADMIN pueden consultar liquidaciones de cualquier empleado.
-- Solo RRHH y ADMIN pueden cargar, modificar o borrar liquidaciones.
-- No se permite cargar dos liquidaciones para el mismo empleado en el mismo mes.
-- El empleado puede eliminar sus propias solicitudes de licencia o vacaciones solo si no fueron aceptadas.
-- RRHH no elimina solicitudes de licencia/vacaciones: las gestiona, aprueba o rechaza.
+- STAFF y ADMIN pueden consultar liquidaciones de cualquier empleado.
+- Solo STAFF y ADMIN pueden cargar, modificar, confirmar o anular liquidaciones.
+- El empleado solo puede consultar sus propias liquidaciones confirmadas.
+- No se permite cargar dos liquidaciones activas para el mismo empleado en el mismo periodo.
+- El empleado solo puede consultar su propio cronograma laboral activo.
+- Una cuenta con empleado vinculado puede consultar solo sus propias solicitudes de vacaciones desde `GET /api/vacations/me`.
+- El empleado puede crear y consultar sus propias solicitudes de jornada, y cancelarlas solo si siguen PENDING.
+- STAFF y ADMIN pueden crear, modificar o cancelar cronogramas laborales sin borrar registros fisicos.
+- STAFF y ADMIN pueden aprobar o rechazar solicitudes de jornada; al aprobar se registra el revisor y se actualiza el cronograma laboral.
+- No se permiten cronogramas activos superpuestos para el mismo empleado, fecha y rango horario.
+- No se permiten dos solicitudes PENDING del mismo tipo para el mismo empleado y fecha objetivo.
+- El empleado puede eliminar sus propias solicitudes de licencia o vacaciones solo si siguen en estado PENDING.
+- STAFF no elimina solicitudes de licencia/vacaciones: las gestiona, aprueba o rechaza.
 - ADMIN puede administrar todos los recursos.
-- Las denuncias solo pueden ser listadas o revisadas por RRHH o ADMIN.
 
 ## Errores comunes
 

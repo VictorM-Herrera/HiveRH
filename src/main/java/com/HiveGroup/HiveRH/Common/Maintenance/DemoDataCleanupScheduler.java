@@ -21,19 +21,21 @@ import java.util.List;
 public class DemoDataCleanupScheduler {
 
     private static final List<String> OPERATIONAL_TABLES = List.of(
+            "refresh_token_session",
             "certificate",
-            "payroll_variation",
+            "work_request",
+            "work_schedule",
+            "payroll_detail",
             "payroll",
+            "payroll_period",
             "vacation",
-            "suspension",
-            "complaint",
             "license",
-            "employee_department_position",
+            "employee_assignment",
             "employee"
     );
 
     private static final List<String> CATALOG_TABLES = List.of(
-            "variation",
+            "payroll_concept",
             "position",
             "department",
             "branch"
